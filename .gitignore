@@ -1,0 +1,32 @@
+# Build artifacts
+/target
+debug/
+*.d
+*.o
+*.so
+*.dylib
+
+# Cargo lock for libraries (keep for binaries)
+# Cargo.lock
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Profiling & debugging
+*.pdb
+perf.data
+perf.data.old
+flamegraph.svg
