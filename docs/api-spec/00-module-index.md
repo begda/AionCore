@@ -60,7 +60,7 @@
 | 15 | Pet 系统 | 15-pet.md | `process/pet/` | ✅ 已完成 |
 | 16 | Office 文档预览 | 16-office-preview.md | `process/bridge/officeWatchBridge.ts`, `process/bridge/pptPreviewBridge.ts`, `process/bridge/previewHistoryBridge.ts`, `process/bridge/starOfficeBridge.ts` | ✅ 已完成 |
 | 17 | Shell 与语音 | 17-shell-voice.md | `process/bridge/shellBridge.ts`, `process/bridge/shellBridgeStandalone.ts`, `process/bridge/speechToTextBridge.ts` | ✅ 已完成 |
-| 99 | Rust Crate 映射 | 99-rust-crate-mapping.md | （从所有模块推导） | ⬜ 待推导（所有模块完成后） |
+| 99 | Rust Crate 映射 | 99-rust-crate-mapping.md | （从所有模块推导） | ✅ 已完成 |
 
 > 以上源码位置均相对于 `AionUi-Bak/src/`。
 
