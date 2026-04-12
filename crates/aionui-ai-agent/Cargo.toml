@@ -1,0 +1,20 @@
+[package]
+name = "aionui-ai-agent"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+aionui-common.workspace = true
+aionui-db.workspace = true
+aionui-api-types.workspace = true
+aionui-realtime.workspace = true
+aionui-system.workspace = true
+tokio.workspace = true
+tokio-tungstenite.workspace = true
+ed25519-dalek.workspace = true
+reqwest.workspace = true
+regex.workspace = true
+aws-sdk-bedrockruntime.workspace = true
+dashmap.workspace = true
+serde.workspace = true
+serde_json.workspace = true

@@ -1,0 +1,24 @@
+[package]
+name = "aionui-channel"
+version.workspace = true
+edition.workspace = true
+
+[features]
+default = ["telegram"]
+telegram = ["dep:reqwest"]
+lark = ["dep:reqwest"]
+dingtalk = ["dep:reqwest", "dep:tokio-tungstenite"]
+weixin = ["dep:reqwest"]
+
+[dependencies]
+aionui-common.workspace = true
+aionui-db.workspace = true
+aionui-api-types.workspace = true
+aionui-realtime.workspace = true
+aionui-conversation.workspace = true
+aionui-ai-agent.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+reqwest = { workspace = true, optional = true }
+tokio-tungstenite = { workspace = true, optional = true }

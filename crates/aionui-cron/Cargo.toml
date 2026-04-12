@@ -1,0 +1,16 @@
+[package]
+name = "aionui-cron"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+aionui-common.workspace = true
+aionui-db.workspace = true
+aionui-api-types.workspace = true
+aionui-realtime.workspace = true
+aionui-conversation.workspace = true
+aionui-ai-agent.workspace = true
+aionui-system.workspace = true
+cron.workspace = true
+tokio.workspace = true
+serde.workspace = true

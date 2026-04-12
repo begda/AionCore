@@ -1,0 +1,15 @@
+[package]
+name = "aionui-system"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+aionui-common.workspace = true
+aionui-db.workspace = true
+aionui-api-types.workspace = true
+aionui-realtime.workspace = true
+reqwest.workspace = true
+aws-sdk-bedrock.workspace = true
+semver.workspace = true
+serde.workspace = true
+serde_json.workspace = true

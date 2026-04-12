@@ -1,0 +1,13 @@
+[package]
+name = "aionui-shell"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+aionui-common.workspace = true
+aionui-api-types.workspace = true
+aionui-system.workspace = true
+open.workspace = true
+which.workspace = true
+reqwest.workspace = true
+serde.workspace = true

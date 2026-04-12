@@ -1,0 +1,17 @@
+[package]
+name = "aionui-file"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+aionui-common.workspace = true
+aionui-realtime.workspace = true
+tokio.workspace = true
+walkdir.workspace = true
+ignore.workspace = true
+notify.workspace = true
+zip.workspace = true
+git2.workspace = true
+reqwest.workspace = true
+mime_guess.workspace = true
+serde.workspace = true

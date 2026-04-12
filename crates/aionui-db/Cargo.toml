@@ -1,0 +1,9 @@
+[package]
+name = "aionui-db"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+aionui-common.workspace = true
+sqlx.workspace = true
+serde.workspace = true
