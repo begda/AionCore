@@ -152,6 +152,9 @@ version = "0.1.0"
 dependencies = [
  "aes-gcm",
  "axum",
+ "base64",
+ "getrandom 0.2.17",
+ "semver",
  "serde",
  "serde_json",
  "thiserror 2.0.18",

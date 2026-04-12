@@ -121,3 +121,9 @@ toml = "0.8"
 
 # Ed25519
 ed25519-dalek = { version = "2", features = ["rand_core"] }
+
+# Encoding
+base64 = "0.22"
+
+# Random
+getrandom = "0.2"
