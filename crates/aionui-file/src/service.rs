@@ -6,24 +6,24 @@ use dashmap::DashMap;
 use ignore::WalkBuilder;
 use tracing::warn;
 
-use aionui_common::AppError;
+use aionui_api_types::WebSocketMessage;
+use aionui_common::{AppError, FileChangeOperation};
 use aionui_realtime::EventBroadcaster;
 
-use crate::path_safety::validate_path;
+use crate::path_safety::{has_traversal, validate_path, validate_path_for_write};
 use crate::types::{
-    CopyResult, DirOrFile, FileMetadata, WorkspaceFlatFile, ZipEntry,
+    ContentUpdateEvent, CopyResult, DirOrFile, FileMetadata,
+    WorkspaceFlatFile, ZipEntry,
 };
 
 /// Maximum number of files returned by `list_workspace_files`.
 const MAX_WORKSPACE_FILES: usize = 20_000;
 
+/// Maximum file size for read operations (256 MB).
+const MAX_FILE_SIZE: u64 = 256 * 1024 * 1024;
+
 /// A concrete implementation of [`crate::traits::IFileService`].
-///
-/// Task 7.3 implements: `get_files_by_dir`, `list_workspace_files`,
-/// `get_file_metadata`. Remaining methods are added in later tasks.
 pub struct FileService {
-    /// Used by write_file / remove_entry to emit contentUpdate events (task 7.4+).
-    #[allow(dead_code)]
     broadcaster: Arc<dyn EventBroadcaster>,
     /// Allowed root directories for path safety validation.
     allowed_roots: Vec<std::path::PathBuf>,
@@ -250,6 +250,86 @@ fn list_workspace_files_sync(
     Ok(files)
 }
 
+/// Read a file as UTF-8 text. Returns `None` if the file does not exist.
+/// Rejects files larger than 256 MB.
+fn read_file_sync(path: &Path) -> Result<Option<String>, AppError> {
+    let metadata = match std::fs::metadata(path) {
+        Ok(m) => m,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(None);
+        }
+        Err(e) => {
+            return Err(AppError::Internal(format!(
+                "cannot read metadata for '{}': {e}",
+                path.display()
+            )));
+        }
+    };
+
+    if metadata.len() > MAX_FILE_SIZE {
+        return Err(AppError::BadRequest(format!(
+            "file '{}' exceeds 256 MB limit ({} bytes)",
+            path.display(),
+            metadata.len()
+        )));
+    }
+
+    let content = std::fs::read_to_string(path).map_err(|e| {
+        AppError::Internal(format!(
+            "cannot read file '{}': {e}",
+            path.display()
+        ))
+    })?;
+
+    Ok(Some(content))
+}
+
+/// Read a file as raw bytes. Returns `None` if the file does not exist.
+/// Rejects files larger than 256 MB.
+fn read_file_buffer_sync(path: &Path) -> Result<Option<Vec<u8>>, AppError> {
+    let metadata = match std::fs::metadata(path) {
+        Ok(m) => m,
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+            return Ok(None);
+        }
+        Err(e) => {
+            return Err(AppError::Internal(format!(
+                "cannot read metadata for '{}': {e}",
+                path.display()
+            )));
+        }
+    };
+
+    if metadata.len() > MAX_FILE_SIZE {
+        return Err(AppError::BadRequest(format!(
+            "file '{}' exceeds 256 MB limit ({} bytes)",
+            path.display(),
+            metadata.len()
+        )));
+    }
+
+    let bytes = std::fs::read(path).map_err(|e| {
+        AppError::Internal(format!(
+            "cannot read file '{}': {e}",
+            path.display()
+        ))
+    })?;
+
+    Ok(Some(bytes))
+}
+
+/// Write data to a file synchronously. Creates the file if it does not exist.
+/// Returns `true` on success.
+fn write_file_sync(path: &Path, data: &[u8]) -> Result<bool, AppError> {
+    std::fs::write(path, data).map_err(|e| {
+        AppError::Internal(format!(
+            "cannot write file '{}': {e}",
+            path.display()
+        ))
+    })?;
+    Ok(true)
+}
+
 /// Get file metadata synchronously.
 fn get_file_metadata_sync(path: &Path) -> Result<FileMetadata, AppError> {
     let metadata = std::fs::metadata(path).map_err(|e| {
@@ -359,29 +439,141 @@ impl crate::traits::IFileService for FileService {
         Ok(result)
     }
 
-    // -- Methods below are implemented in later tasks (7.4 - 7.7) --
+    // -- File read/write (task 7.4) --
 
     async fn read_file(
         &self,
-        _path: &str,
+        path: &str,
     ) -> Result<Option<String>, AppError> {
-        todo!("implemented in task 7.4")
+        if has_traversal(path) {
+            return Err(AppError::BadRequest(format!(
+                "path '{}' contains invalid traversal patterns",
+                path
+            )));
+        }
+
+        let roots = self.allowed_roots_refs();
+        let canonical = match validate_path(path, &roots) {
+            Ok(c) => c,
+            Err(_) => {
+                // File may not exist or may be outside sandbox.
+                // Use validate_path_for_write to check the parent.
+                // If parent is in sandbox, file simply doesn't exist → None.
+                // If parent check also fails, return None (no info leak).
+                match validate_path_for_write(path, &roots) {
+                    Ok(_) => return Ok(None),
+                    Err(_) => return Ok(None),
+                }
+            }
+        };
+
+        tokio::task::spawn_blocking(move || read_file_sync(&canonical))
+            .await
+            .map_err(|e| {
+                AppError::Internal(format!(
+                    "read file task failed: {e}"
+                ))
+            })?
     }
 
     async fn read_file_buffer(
         &self,
-        _path: &str,
+        path: &str,
     ) -> Result<Option<Vec<u8>>, AppError> {
-        todo!("implemented in task 7.4")
+        if has_traversal(path) {
+            return Err(AppError::BadRequest(format!(
+                "path '{}' contains invalid traversal patterns",
+                path
+            )));
+        }
+
+        let roots = self.allowed_roots_refs();
+        let canonical = match validate_path(path, &roots) {
+            Ok(c) => c,
+            Err(_) => {
+                match validate_path_for_write(path, &roots) {
+                    Ok(_) => return Ok(None),
+                    Err(_) => return Ok(None),
+                }
+            }
+        };
+
+        tokio::task::spawn_blocking(move || {
+            read_file_buffer_sync(&canonical)
+        })
+        .await
+        .map_err(|e| {
+            AppError::Internal(format!(
+                "read file buffer task failed: {e}"
+            ))
+        })?
     }
 
     async fn write_file(
         &self,
-        _path: &str,
-        _data: &[u8],
-        _workspace: &str,
+        path: &str,
+        data: &[u8],
+        workspace: &str,
     ) -> Result<bool, AppError> {
-        todo!("implemented in task 7.4")
+        if has_traversal(path) {
+            return Err(AppError::BadRequest(format!(
+                "path '{}' contains invalid traversal patterns",
+                path
+            )));
+        }
+
+        let roots = self.allowed_roots_refs();
+        let canonical = validate_path_for_write(path, &roots)?;
+
+        let path_owned = canonical.clone();
+        let data_owned = data.to_vec();
+        tokio::task::spawn_blocking(move || {
+            write_file_sync(&path_owned, &data_owned)
+        })
+        .await
+        .map_err(|e| {
+            AppError::Internal(format!(
+                "write file task failed: {e}"
+            ))
+        })??;
+
+        // Compute relative path from workspace
+        let workspace_path = Path::new(workspace);
+        let relative_path = canonical
+            .strip_prefix(
+                std::fs::canonicalize(workspace_path)
+                    .unwrap_or_else(|_| workspace_path.to_path_buf()),
+            )
+            .unwrap_or(&canonical)
+            .to_string_lossy()
+            .into_owned();
+
+        // Build and broadcast contentUpdate event
+        let content = String::from_utf8(data.to_vec()).ok();
+        let event = ContentUpdateEvent {
+            file_path: canonical.to_string_lossy().into_owned(),
+            content,
+            workspace: workspace.to_owned(),
+            relative_path,
+            operation: FileChangeOperation::Modify,
+        };
+        let payload = serde_json::to_value(&event).unwrap_or_default();
+        let msg = WebSocketMessage::new(
+            "fileStream.contentUpdate",
+            payload,
+        );
+        self.broadcaster.broadcast(msg);
+
+        // Invalidate workspace files cache since a file may have been
+        // created or its content changed
+        if let Ok(canonical_ws) = std::fs::canonicalize(workspace_path)
+        {
+            self.invalidate_cache(
+                &canonical_ws.to_string_lossy(),
+            );
+        }
+
+        Ok(true)
     }
 
     async fn copy_files_to_workspace(
@@ -625,5 +817,97 @@ mod tests {
 
         let meta = get_file_metadata_sync(&file).unwrap();
         assert_eq!(meta.mime_type, "application/octet-stream");
+    }
+
+    // -- read_file_sync tests (task 7.4) --
+
+    #[test]
+    fn read_file_sync_normal_utf8() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("hello.txt");
+        fs::write(&file, "hello world").unwrap();
+
+        let result = read_file_sync(&file).unwrap();
+        assert_eq!(result.as_deref(), Some("hello world"));
+    }
+
+    #[test]
+    fn read_file_sync_empty_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("empty.txt");
+        fs::write(&file, "").unwrap();
+
+        let result = read_file_sync(&file).unwrap();
+        assert_eq!(result.as_deref(), Some(""));
+    }
+
+    #[test]
+    fn read_file_sync_nonexistent() {
+        let dir = tempfile::tempdir().unwrap();
+        let fake = dir.path().join("missing.txt");
+
+        let result = read_file_sync(&fake).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn read_file_sync_max_size_constant() {
+        assert_eq!(MAX_FILE_SIZE, 256 * 1024 * 1024);
+    }
+
+    // -- read_file_buffer_sync tests --
+
+    #[test]
+    fn read_file_buffer_sync_normal() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("data.bin");
+        let bytes: Vec<u8> = vec![0x00, 0xFF, 0x42, 0x89];
+        fs::write(&file, &bytes).unwrap();
+
+        let result = read_file_buffer_sync(&file).unwrap();
+        assert_eq!(result.as_deref(), Some(bytes.as_slice()));
+    }
+
+    #[test]
+    fn read_file_buffer_sync_nonexistent() {
+        let dir = tempfile::tempdir().unwrap();
+        let fake = dir.path().join("missing.bin");
+
+        let result = read_file_buffer_sync(&fake).unwrap();
+        assert!(result.is_none());
+    }
+
+    // -- write_file_sync tests --
+
+    #[test]
+    fn write_file_sync_new_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("output.txt");
+
+        let ok = write_file_sync(&file, b"hello").unwrap();
+        assert!(ok);
+        assert_eq!(fs::read_to_string(&file).unwrap(), "hello");
+    }
+
+    #[test]
+    fn write_file_sync_overwrites() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("overwrite.txt");
+        fs::write(&file, "old").unwrap();
+
+        let ok = write_file_sync(&file, b"new content").unwrap();
+        assert!(ok);
+        assert_eq!(fs::read_to_string(&file).unwrap(), "new content");
+    }
+
+    #[test]
+    fn write_file_sync_binary() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("data.bin");
+        let data = vec![0x00, 0xFF, 0xAB];
+
+        let ok = write_file_sync(&file, &data).unwrap();
+        assert!(ok);
+        assert_eq!(fs::read(&file).unwrap(), data);
     }
 }
