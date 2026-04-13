@@ -250,9 +250,10 @@ fn list_workspace_files_sync(
     Ok(files)
 }
 
-/// Read a file as UTF-8 text. Returns `None` if the file does not exist.
-/// Rejects files larger than 256 MB.
-fn read_file_sync(path: &Path) -> Result<Option<String>, AppError> {
+/// Validate that a file exists and is within the size limit.
+/// Returns `Ok(None)` if the file does not exist.
+/// Returns `Ok(Some(()))` if the file is valid for reading.
+fn validate_file_for_read(path: &Path) -> Result<Option<()>, AppError> {
     let metadata = match std::fs::metadata(path) {
         Ok(m) => m,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
@@ -274,6 +275,16 @@ fn read_file_sync(path: &Path) -> Result<Option<String>, AppError> {
         )));
     }
 
+    Ok(Some(()))
+}
+
+/// Read a file as UTF-8 text. Returns `None` if the file does not exist.
+/// Rejects files larger than 256 MB.
+fn read_file_sync(path: &Path) -> Result<Option<String>, AppError> {
+    if validate_file_for_read(path)?.is_none() {
+        return Ok(None);
+    }
+
     let content = std::fs::read_to_string(path).map_err(|e| {
         AppError::Internal(format!(
             "cannot read file '{}': {e}",
@@ -287,25 +298,8 @@ fn read_file_sync(path: &Path) -> Result<Option<String>, AppError> {
 /// Read a file as raw bytes. Returns `None` if the file does not exist.
 /// Rejects files larger than 256 MB.
 fn read_file_buffer_sync(path: &Path) -> Result<Option<Vec<u8>>, AppError> {
-    let metadata = match std::fs::metadata(path) {
-        Ok(m) => m,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            return Ok(None);
-        }
-        Err(e) => {
-            return Err(AppError::Internal(format!(
-                "cannot read metadata for '{}': {e}",
-                path.display()
-            )));
-        }
-    };
-
-    if metadata.len() > MAX_FILE_SIZE {
-        return Err(AppError::BadRequest(format!(
-            "file '{}' exceeds 256 MB limit ({} bytes)",
-            path.display(),
-            metadata.len()
-        )));
+    if validate_file_for_read(path)?.is_none() {
+        return Ok(None);
     }
 
     let bytes = std::fs::read(path).map_err(|e| {
@@ -850,9 +844,25 @@ mod tests {
         assert!(result.is_none());
     }
 
+    // -- validate_file_for_read tests --
+
     #[test]
-    fn read_file_sync_max_size_constant() {
-        assert_eq!(MAX_FILE_SIZE, 256 * 1024 * 1024);
+    fn validate_file_for_read_existing_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("valid.txt");
+        fs::write(&file, "data").unwrap();
+
+        let result = validate_file_for_read(&file).unwrap();
+        assert!(result.is_some());
+    }
+
+    #[test]
+    fn validate_file_for_read_nonexistent() {
+        let dir = tempfile::tempdir().unwrap();
+        let fake = dir.path().join("nope.txt");
+
+        let result = validate_file_for_read(&fake).unwrap();
+        assert!(result.is_none());
     }
 
     // -- read_file_buffer_sync tests --
