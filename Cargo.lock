@@ -261,6 +261,7 @@ dependencies = [
  "aionui-common",
  "aionui-realtime",
  "async-trait",
+ "base64",
  "dashmap",
  "git2",
  "ignore",

@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::time::UNIX_EPOCH;
 
+use base64::Engine;
 use dashmap::DashMap;
 use ignore::WalkBuilder;
 use tracing::warn;
@@ -21,6 +22,39 @@ const MAX_WORKSPACE_FILES: usize = 20_000;
 
 /// Maximum file size for read operations (256 MB).
 const MAX_FILE_SIZE: u64 = 256 * 1024 * 1024;
+
+/// Maximum remote image size (5 MB).
+const MAX_REMOTE_IMAGE_SIZE: usize = 5 * 1024 * 1024;
+
+/// Maximum number of HTTP redirects for remote image fetching.
+const MAX_REDIRECTS: usize = 5;
+
+/// Request timeout for remote image fetching (30 seconds).
+const REMOTE_IMAGE_TIMEOUT: std::time::Duration =
+    std::time::Duration::from_secs(30);
+
+/// Allowed hosts for remote image fetching.
+const ALLOWED_IMAGE_HOSTS: &[&str] = &[
+    "github.com",
+    "raw.githubusercontent.com",
+    "avatars.githubusercontent.com",
+    "user-images.githubusercontent.com",
+    "camo.githubusercontent.com",
+    "objects.githubusercontent.com",
+    "repository-images.githubusercontent.com",
+];
+
+/// Placeholder SVG returned when remote image fetching fails.
+const PLACEHOLDER_SVG: &str = concat!(
+    "<svg xmlns=\"http://www.w3.org/2000/svg\" ",
+    "width=\"200\" height=\"200\" viewBox=\"0 0 200 200\">",
+    "<rect fill=\"#f0f0f0\" width=\"200\" height=\"200\"/>",
+    "<text x=\"100\" y=\"96\" text-anchor=\"middle\" ",
+    "fill=\"#999\" font-family=\"sans-serif\" font-size=\"14\">",
+    "Image Unavailable",
+    "</text>",
+    "</svg>",
+);
 
 /// A concrete implementation of [`crate::traits::IFileService`].
 pub struct FileService {
@@ -448,6 +482,69 @@ fn copy_single_file_sync(
     })?;
 
     Ok(())
+}
+
+/// Read a local image file and return a base64 Data URL.
+fn get_image_base64_sync(path: &Path) -> Result<String, AppError> {
+    let bytes = std::fs::read(path).map_err(|e| {
+        AppError::NotFound(format!(
+            "cannot read image '{}': {e}",
+            path.display()
+        ))
+    })?;
+
+    let mime = mime_guess::from_path(path)
+        .first()
+        .map(|m| m.to_string())
+        .unwrap_or_else(|| "application/octet-stream".to_owned());
+
+    let encoded =
+        base64::engine::general_purpose::STANDARD.encode(&bytes);
+
+    Ok(format!("data:{mime};base64,{encoded}"))
+}
+
+/// Build a placeholder SVG Data URL for failed remote image fetches.
+fn placeholder_svg_data_url() -> String {
+    let encoded =
+        base64::engine::general_purpose::STANDARD.encode(PLACEHOLDER_SVG);
+    format!("data:image/svg+xml;base64,{encoded}")
+}
+
+/// Check whether a URL host is in the allowed whitelist.
+fn is_allowed_image_host(url: &reqwest::Url) -> bool {
+    let host = match url.host_str() {
+        Some(h) => h,
+        None => return false,
+    };
+    ALLOWED_IMAGE_HOSTS.contains(&host)
+}
+
+/// Validate a remote image URL: protocol must be HTTP(S) and host must be
+/// whitelisted.
+fn validate_remote_image_url(
+    raw_url: &str,
+) -> Result<reqwest::Url, String> {
+    let url = reqwest::Url::parse(raw_url)
+        .map_err(|e| format!("invalid URL '{raw_url}': {e}"))?;
+
+    match url.scheme() {
+        "http" | "https" => {}
+        scheme => {
+            return Err(format!(
+                "unsupported protocol '{scheme}', only HTTP/HTTPS allowed"
+            ));
+        }
+    }
+
+    if !is_allowed_image_host(&url) {
+        return Err(format!(
+            "host '{}' is not in the allowed image host list",
+            url.host_str().unwrap_or("unknown")
+        ));
+    }
+
+    Ok(url)
 }
 
 #[async_trait::async_trait]
@@ -882,13 +979,118 @@ impl crate::traits::IFileService for FileService {
 
     async fn get_image_base64(
         &self,
-        _path: &str,
+        path: &str,
     ) -> Result<String, AppError> {
-        todo!("implemented in task 7.6")
+        if has_traversal(path) {
+            return Err(AppError::BadRequest(format!(
+                "path '{}' contains invalid traversal patterns",
+                path
+            )));
+        }
+
+        let roots = self.allowed_roots_refs();
+        let canonical = validate_path(path, &roots)?;
+
+        tokio::task::spawn_blocking(move || {
+            get_image_base64_sync(&canonical)
+        })
+        .await
+        .map_err(|e| {
+            AppError::Internal(format!(
+                "image base64 task failed: {e}"
+            ))
+        })?
     }
 
-    async fn fetch_remote_image(&self, _url: &str) -> String {
-        todo!("implemented in task 7.6")
+    async fn fetch_remote_image(&self, url: &str) -> String {
+        let parsed = match validate_remote_image_url(url) {
+            Ok(u) => u,
+            Err(e) => {
+                warn!("remote image rejected: {e}");
+                return placeholder_svg_data_url();
+            }
+        };
+
+        let client = match reqwest::Client::builder()
+            .redirect(reqwest::redirect::Policy::limited(MAX_REDIRECTS))
+            .timeout(REMOTE_IMAGE_TIMEOUT)
+            .build()
+        {
+            Ok(c) => c,
+            Err(e) => {
+                warn!("failed to build HTTP client: {e}");
+                return placeholder_svg_data_url();
+            }
+        };
+
+        let response = match client.get(parsed.clone()).send().await {
+            Ok(r) => r,
+            Err(e) => {
+                warn!("remote image fetch failed for '{}': {e}", url);
+                return placeholder_svg_data_url();
+            }
+        };
+
+        if !response.status().is_success() {
+            warn!(
+                "remote image fetch returned status {} for '{}'",
+                response.status(),
+                url
+            );
+            return placeholder_svg_data_url();
+        }
+
+        // Early reject if Content-Length exceeds limit
+        if let Some(len) = response.content_length()
+            && len > MAX_REMOTE_IMAGE_SIZE as u64
+        {
+            warn!(
+                "remote image too large ({} bytes) for '{}'",
+                len, url
+            );
+            return placeholder_svg_data_url();
+        }
+
+        // Determine MIME from Content-Type header, fall back to URL extension
+        let content_type = response
+            .headers()
+            .get(reqwest::header::CONTENT_TYPE)
+            .and_then(|v| v.to_str().ok())
+            .and_then(|ct| ct.split(';').next())
+            .map(|s| s.trim().to_owned());
+
+        let mime = content_type.unwrap_or_else(|| {
+            mime_guess::from_path(parsed.path())
+                .first()
+                .map(|m| m.to_string())
+                .unwrap_or_else(|| {
+                    "application/octet-stream".to_owned()
+                })
+        });
+
+        let bytes = match response.bytes().await {
+            Ok(b) => b,
+            Err(e) => {
+                warn!(
+                    "failed to read remote image body for '{}': {e}",
+                    url
+                );
+                return placeholder_svg_data_url();
+            }
+        };
+
+        if bytes.len() > MAX_REMOTE_IMAGE_SIZE {
+            warn!(
+                "remote image body too large ({} bytes) for '{}'",
+                bytes.len(),
+                url
+            );
+            return placeholder_svg_data_url();
+        }
+
+        let encoded =
+            base64::engine::general_purpose::STANDARD.encode(&bytes);
+        format!("data:{mime};base64,{encoded}")
     }
 
     async fn create_zip(
@@ -1304,5 +1506,160 @@ mod tests {
 
         let result = copy_single_file_sync(&src, &dest);
         assert!(result.is_err());
+    }
+
+    // -- get_image_base64_sync tests (task 7.6) --
+
+    #[test]
+    fn get_image_base64_sync_png() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("test.png");
+        let bytes = vec![0x89, 0x50, 0x4E, 0x47]; // PNG magic bytes
+        fs::write(&file, &bytes).unwrap();
+
+        let result = get_image_base64_sync(&file).unwrap();
+        assert!(result.starts_with("data:image/png;base64,"));
+
+        // Verify the base64 part decodes back to original bytes
+        let encoded_part = result.strip_prefix("data:image/png;base64,").unwrap();
+        let decoded =
+            base64::engine::general_purpose::STANDARD.decode(encoded_part).unwrap();
+        assert_eq!(decoded, bytes);
+    }
+
+    #[test]
+    fn get_image_base64_sync_jpeg() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("photo.jpg");
+        let bytes = vec![0xFF, 0xD8, 0xFF, 0xE0]; // JPEG magic bytes
+        fs::write(&file, &bytes).unwrap();
+
+        let result = get_image_base64_sync(&file).unwrap();
+        assert!(result.starts_with("data:image/jpeg;base64,"));
+    }
+
+    #[test]
+    fn get_image_base64_sync_svg() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("icon.svg");
+        fs::write(&file, "<svg></svg>").unwrap();
+
+        let result = get_image_base64_sync(&file).unwrap();
+        assert!(result.starts_with("data:image/svg+xml;base64,"));
+    }
+
+    #[test]
+    fn get_image_base64_sync_nonexistent() {
+        let dir = tempfile::tempdir().unwrap();
+        let fake = dir.path().join("missing.png");
+
+        let result = get_image_base64_sync(&fake);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn get_image_base64_sync_unknown_extension() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("data.xyz999");
+        fs::write(&file, b"some bytes").unwrap();
+
+        let result = get_image_base64_sync(&file).unwrap();
+        // Falls back to application/octet-stream
+        assert!(result.starts_with("data:application/octet-stream;base64,"));
+    }
+
+    // -- placeholder_svg_data_url tests --
+
+    #[test]
+    fn placeholder_svg_data_url_format() {
+        let url = placeholder_svg_data_url();
+        assert!(url.starts_with("data:image/svg+xml;base64,"));
+
+        // Verify it decodes to valid SVG content
+        let encoded_part = url.strip_prefix("data:image/svg+xml;base64,").unwrap();
+        let decoded =
+            base64::engine::general_purpose::STANDARD.decode(encoded_part).unwrap();
+        let svg = String::from_utf8(decoded).unwrap();
+        assert!(svg.contains("<svg"));
+        assert!(svg.contains("</svg>"));
+    }
+
+    // -- validate_remote_image_url tests --
+
+    #[test]
+    fn validate_remote_image_url_https_allowed_host() {
+        let result = validate_remote_image_url(
+            "https://raw.githubusercontent.com/owner/repo/main/image.png",
+        );
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn validate_remote_image_url_http_allowed_host() {
+        let result = validate_remote_image_url(
+            "http://github.com/image.png",
+        );
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn validate_remote_image_url_disallowed_host() {
+        let result = validate_remote_image_url(
+            "https://evil.com/image.png",
+        );
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("not in the allowed"));
+    }
+
+    #[test]
+    fn validate_remote_image_url_ftp_protocol() {
+        let result = validate_remote_image_url(
+            "ftp://github.com/image.png",
+        );
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("unsupported protocol"));
+    }
+
+    #[test]
+    fn validate_remote_image_url_invalid_url() {
+        let result = validate_remote_image_url("not-a-url");
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("invalid URL"));
+    }
+
+    #[test]
+    fn validate_remote_image_url_file_protocol() {
+        let result = validate_remote_image_url(
+            "file:///etc/passwd",
+        );
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("unsupported protocol"));
+    }
+
+    // -- is_allowed_image_host tests --
+
+    #[test]
+    fn is_allowed_image_host_exact_match() {
+        let url = reqwest::Url::parse("https://github.com/img.png").unwrap();
+        assert!(is_allowed_image_host(&url));
+    }
+
+    #[test]
+    fn is_allowed_image_host_subdomain_not_matched() {
+        // "sub.github.com" should NOT match "github.com"
+        let url = reqwest::Url::parse("https://sub.github.com/img.png").unwrap();
+        assert!(!is_allowed_image_host(&url));
+    }
+
+    #[test]
+    fn is_allowed_image_host_all_listed_hosts() {
+        for host in ALLOWED_IMAGE_HOSTS {
+            let url_str = format!("https://{host}/test.png");
+            let url = reqwest::Url::parse(&url_str).unwrap();
+            assert!(
+                is_allowed_image_host(&url),
+                "host '{host}' should be allowed"
+            );
+        }
     }
 }
