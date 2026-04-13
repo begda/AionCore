@@ -155,8 +155,9 @@ impl IRemoteAgentRepository for SqliteRemoteAgentRepository {
         let now = aionui_common::now_ms();
 
         let result = sqlx::query(
-            "UPDATE remote_agents SET status = ?, last_connected_at = ?, updated_at = ? \
-             WHERE id = ?",
+            "UPDATE remote_agents SET status = ?, \
+             last_connected_at = COALESCE(?, last_connected_at), \
+             updated_at = ? WHERE id = ?",
         )
         .bind(status)
         .bind(last_connected_at)
@@ -412,9 +413,32 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn update_status_without_last_connected() {
+    async fn update_status_without_last_connected_preserves_existing() {
         let (repo, _db) = setup().await;
         let created = repo.create(sample_params()).await.unwrap();
+
+        // First set a connected timestamp
+        let connect_time = aionui_common::now_ms();
+        repo.update_status(&created.id, "connected", Some(connect_time))
+            .await
+            .unwrap();
+
+        // Now update status to error without providing last_connected_at
+        repo.update_status(&created.id, "error", None)
+            .await
+            .unwrap();
+
+        let found = repo.find_by_id(&created.id).await.unwrap().unwrap();
+        assert_eq!(found.status, "error");
+        // COALESCE preserves the existing last_connected_at
+        assert_eq!(found.last_connected_at, Some(connect_time));
+    }
+
+    #[tokio::test]
+    async fn update_status_none_on_null_field_stays_null() {
+        let (repo, _db) = setup().await;
+        let created = repo.create(sample_params()).await.unwrap();
+        assert!(created.last_connected_at.is_none());
 
         repo.update_status(&created.id, "error", None)
             .await

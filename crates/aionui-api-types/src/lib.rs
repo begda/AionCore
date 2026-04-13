@@ -3,6 +3,7 @@ mod confirmation;
 mod conversation;
 mod lifecycle;
 mod provider;
+mod remote_agent;
 mod response;
 mod system;
 mod websocket;
@@ -29,6 +30,10 @@ pub use provider::{
     DetectionSuggestion, FetchModelsRequest, FetchModelsResponse, HealthStatus, KeyTestResult,
     ModelCapability, ModelHealthStatus, ModelInfo, ModelType, MultiKeyResult,
     ProtocolDetectionResponse, ProviderResponse, SuggestionType, UpdateProviderRequest,
+};
+pub use remote_agent::{
+    CreateRemoteAgentRequest, HandshakeResponse, RemoteAgentListItem, RemoteAgentResponse,
+    TestRemoteAgentConnectionRequest, UpdateRemoteAgentRequest,
 };
 pub use response::{ApiResponse, ErrorResponse};
 pub use system::{

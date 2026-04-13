@@ -6,7 +6,10 @@ use axum::{Json, Router, middleware};
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
-use aionui_ai_agent::{AgentFactory, IWorkerTaskManager, WorkerTaskManagerImpl};
+use aionui_ai_agent::{
+    AgentFactory, IWorkerTaskManager, RemoteAgentRouterState, RemoteAgentService,
+    WorkerTaskManagerImpl, remote_agent_routes,
+};
 use aionui_auth::{
     AuthRouterState, AuthState, CookieConfig, JwtService, QrTokenStore, auth_middleware,
     auth_routes, csrf_middleware, extract_token_from_ws_headers, resolve_jwt_secret,
@@ -16,7 +19,8 @@ use aionui_common::AppError;
 use aionui_conversation::{ConversationRouterState, ConversationService, conversation_routes};
 use aionui_db::{
     Database, IUserRepository, SqliteClientPreferenceRepository, SqliteConversationRepository,
-    SqliteProviderRepository, SqliteSettingsRepository, SqliteUserRepository,
+    SqliteProviderRepository, SqliteRemoteAgentRepository, SqliteSettingsRepository,
+    SqliteUserRepository,
 };
 use aionui_realtime::{
     BroadcastEventBus, NoopMessageRouter, WebSocketManager, WsHandlerState, ws_upgrade_handler,
@@ -182,7 +186,13 @@ pub fn build_system_state(services: &AppServices) -> SystemRouterState {
 pub fn create_router(services: &AppServices) -> Router {
     let system_state = build_system_state(services);
     let conversation_state = build_conversation_state(services);
-    create_router_with_system_state(services, system_state, conversation_state)
+    let remote_agent_state = build_remote_agent_state(services);
+    create_router_with_system_state(
+        services,
+        system_state,
+        conversation_state,
+        remote_agent_state,
+    )
 }
 
 /// Build the default `ConversationRouterState` from application services.
@@ -192,6 +202,16 @@ pub fn build_conversation_state(services: &AppServices) -> ConversationRouterSta
     ConversationRouterState {
         conversation_service: ConversationService::new(repo, services.event_bus.clone()),
         worker_task_manager: services.worker_task_manager.clone(),
+    }
+}
+
+/// Build the default `RemoteAgentRouterState` from application services.
+pub fn build_remote_agent_state(services: &AppServices) -> RemoteAgentRouterState {
+    let encryption_key = derive_encryption_key(&services.jwt_secret_raw);
+    let pool = services.database.pool().clone();
+    let repo = Arc::new(SqliteRemoteAgentRepository::new(pool));
+    RemoteAgentRouterState {
+        service: RemoteAgentService::new(repo, encryption_key),
     }
 }
 
@@ -223,9 +243,16 @@ pub fn create_router_with_system_state(
     services: &AppServices,
     system_state: SystemRouterState,
     conversation_state: ConversationRouterState,
+    remote_agent_state: RemoteAgentRouterState,
 ) -> Router {
     let ws_state = build_ws_state(services);
-    create_router_with_all_state(services, system_state, conversation_state, ws_state)
+    create_router_with_all_state(
+        services,
+        system_state,
+        conversation_state,
+        remote_agent_state,
+        ws_state,
+    )
 }
 
 /// Create the application router with custom system, conversation, and WebSocket state.
@@ -236,6 +263,7 @@ pub fn create_router_with_all_state(
     services: &AppServices,
     system_state: SystemRouterState,
     conversation_state: ConversationRouterState,
+    remote_agent_state: RemoteAgentRouterState,
     ws_state: WsHandlerState,
 ) -> Router {
     let auth_state = AuthRouterState {
@@ -256,6 +284,10 @@ pub fn create_router_with_all_state(
 
     // Conversation routes protected by auth middleware
     let conversation_authenticated = conversation_routes(conversation_state)
+        .route_layer(from_fn_with_state(auth_mw_state.clone(), auth_middleware));
+
+    // Remote agent routes protected by auth middleware
+    let remote_agent_authenticated = remote_agent_routes(remote_agent_state)
         .route_layer(from_fn_with_state(auth_mw_state, auth_middleware));
 
     // WebSocket upgrade route — exempt from CSRF (no cookie-based
@@ -269,6 +301,7 @@ pub fn create_router_with_all_state(
         .merge(auth_routes(auth_state))
         .merge(system_authenticated)
         .merge(conversation_authenticated)
+        .merge(remote_agent_authenticated)
         .layer(middleware::from_fn_with_state(
             services.cookie_config.clone(),
             csrf_middleware,

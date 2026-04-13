@@ -7,8 +7,8 @@ use tower::ServiceExt;
 use wiremock::MockServer;
 
 use aionui_app::{
-    AppServices, build_conversation_state, build_system_state, create_router,
-    create_router_with_system_state,
+    AppServices, build_conversation_state, build_remote_agent_state, build_system_state,
+    create_router, create_router_with_system_state,
 };
 use aionui_system::VersionCheckService;
 
@@ -32,7 +32,13 @@ pub async fn build_app_with_mock_version(
         mock_server.uri(),
     );
     let conversation_state = build_conversation_state(&services);
-    let router = create_router_with_system_state(&services, system_state, conversation_state);
+    let remote_agent_state = build_remote_agent_state(&services);
+    let router = create_router_with_system_state(
+        &services,
+        system_state,
+        conversation_state,
+        remote_agent_state,
+    );
     (router, services)
 }
 
