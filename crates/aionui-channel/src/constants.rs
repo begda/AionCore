@@ -55,6 +55,21 @@ pub const TELEGRAM_MAX_RECONNECT_DELAY: Duration = Duration::from_secs(30);
 pub const LARK_EVENT_DEDUP_TTL: Duration = Duration::from_secs(5 * 60);
 
 // ---------------------------------------------------------------------------
+// DingTalk
+// ---------------------------------------------------------------------------
+
+/// Maximum reconnection attempts for DingTalk WebSocket Stream.
+pub const DINGTALK_MAX_RECONNECT_ATTEMPTS: u32 = 10;
+
+/// Maximum delay between DingTalk reconnection attempts (exponential backoff cap).
+pub const DINGTALK_MAX_RECONNECT_DELAY: Duration = Duration::from_secs(30);
+
+/// DingTalk access token TTL refresh margin (5 minutes before expiry).
+/// Used by `DingtalkApi` for proactive token refresh.
+#[allow(dead_code)]
+pub const DINGTALK_TOKEN_REFRESH_MARGIN: Duration = Duration::from_secs(5 * 60);
+
+// ---------------------------------------------------------------------------
 // WeChat (iLink Bot)
 // ---------------------------------------------------------------------------
 
@@ -123,6 +138,17 @@ mod tests {
     #[test]
     fn lark_event_dedup_ttl_is_five_minutes() {
         assert_eq!(LARK_EVENT_DEDUP_TTL, Duration::from_secs(300));
+    }
+
+    #[test]
+    fn dingtalk_reconnect_limits() {
+        assert_eq!(DINGTALK_MAX_RECONNECT_ATTEMPTS, 10);
+        assert_eq!(DINGTALK_MAX_RECONNECT_DELAY, Duration::from_secs(30));
+    }
+
+    #[test]
+    fn dingtalk_token_refresh_margin() {
+        assert_eq!(DINGTALK_TOKEN_REFRESH_MARGIN, Duration::from_secs(300));
     }
 
     #[test]
