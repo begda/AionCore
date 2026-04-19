@@ -1,5 +1,6 @@
 pub mod error;
 pub mod mailbox;
+pub mod mcp;
 pub mod scheduler;
 pub mod task_board;
 #[cfg(test)]
@@ -8,6 +9,7 @@ pub mod types;
 
 pub use error::TeamError;
 pub use mailbox::Mailbox;
+pub use mcp::{TeamMcpServer, TeamMcpStdioConfig};
 pub use scheduler::{SchedulerAction, TeammateManager, WakePayload, WAKE_TIMEOUT_MS};
 pub use task_board::{TaskBoard, TaskUpdate};
 pub use types::{

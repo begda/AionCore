@@ -367,6 +367,10 @@ impl TeammateManager {
         slots.values().map(|s| s.agent.clone()).collect()
     }
 
+    pub async fn list_tasks(&self) -> Result<Vec<crate::types::TeamTask>, TeamError> {
+        self.task_board.list_tasks(&self.team_id).await
+    }
+
     pub async fn find_lead_slot_id(&self) -> Option<String> {
         let slots = self.slots.lock().await;
         slots
