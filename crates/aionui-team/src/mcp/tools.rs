@@ -233,13 +233,7 @@ pub fn parse_tool_call(
                 blocked_by: input.blocked_by,
             })
         }
-        "team_task_list" => Ok(SchedulerAction::TaskCreate {
-            subject: String::new(),
-            description: None,
-            owner: None,
-            blocked_by: vec![],
-        }),
-        "team_members" | "team_rename_agent" | "team_shutdown_agent" => {
+        "team_task_list" | "team_members" | "team_rename_agent" | "team_shutdown_agent" => {
             Err("handled directly by server".into())
         }
         _ => Err(format!("Unknown tool: {tool_name}")),
@@ -378,5 +372,35 @@ mod tests {
             SchedulerAction::TaskCreate { blocked_by, .. }
             if blocked_by == vec!["tk-a", "tk-b"]
         ));
+    }
+
+    #[test]
+    fn parse_task_list_handled_by_server() {
+        let result = parse_tool_call("team_task_list", &json!({}), TeammateRole::Teammate);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("handled directly by server"));
+    }
+
+    #[test]
+    fn parse_members_handled_by_server() {
+        let result = parse_tool_call("team_members", &json!({}), TeammateRole::Lead);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("handled directly by server"));
+    }
+
+    #[test]
+    fn parse_rename_agent_handled_by_server() {
+        let args = json!({"slotId": "s1", "newName": "X"});
+        let result = parse_tool_call("team_rename_agent", &args, TeammateRole::Lead);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("handled directly by server"));
+    }
+
+    #[test]
+    fn parse_shutdown_agent_handled_by_server() {
+        let args = json!({"slotId": "s1"});
+        let result = parse_tool_call("team_shutdown_agent", &args, TeammateRole::Lead);
+        assert!(result.is_err());
+        assert!(result.unwrap_err().contains("handled directly by server"));
     }
 }

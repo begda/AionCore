@@ -1,18 +1,17 @@
+mod common;
+
 use std::sync::Arc;
 
 use aionui_api_types::WebSocketMessage;
-use aionui_db::models::{MailboxMessageRow, TeamRow, TeamTaskRow};
-use aionui_db::{DbError, ITeamRepository, UpdateTaskParams, UpdateTeamParams};
 use aionui_realtime::EventBroadcaster;
 use aionui_team::mcp::protocol::{read_frame, write_frame};
-use aionui_team::{
-    Mailbox, TaskBoard, TeamAgent, TeamMcpServer, TeammateManager, TeammateRole,
-};
+use aionui_team::{Mailbox, TaskBoard, TeamAgent, TeamMcpServer, TeammateManager, TeammateRole};
+use common::MockTeamRepo;
 use serde_json::{json, Value};
 use tokio::net::TcpStream;
 
 // ---------------------------------------------------------------------------
-// Test infrastructure (same pattern as scheduler_integration.rs)
+// Test infrastructure
 // ---------------------------------------------------------------------------
 
 struct RecordingBroadcaster {
@@ -30,195 +29,6 @@ impl RecordingBroadcaster {
 impl EventBroadcaster for RecordingBroadcaster {
     fn broadcast(&self, event: WebSocketMessage<Value>) {
         self.events.lock().unwrap().push(event);
-    }
-}
-
-#[derive(Default)]
-struct MockState {
-    messages: Vec<MailboxMessageRow>,
-    tasks: Vec<TeamTaskRow>,
-}
-
-struct MockTeamRepo {
-    state: std::sync::Mutex<MockState>,
-}
-
-impl MockTeamRepo {
-    fn new() -> Self {
-        Self {
-            state: std::sync::Mutex::new(MockState::default()),
-        }
-    }
-}
-
-#[async_trait::async_trait]
-impl ITeamRepository for MockTeamRepo {
-    async fn create_team(&self, _row: &TeamRow) -> Result<(), DbError> {
-        Ok(())
-    }
-    async fn list_teams(&self) -> Result<Vec<TeamRow>, DbError> {
-        Ok(vec![])
-    }
-    async fn get_team(&self, _id: &str) -> Result<Option<TeamRow>, DbError> {
-        Ok(None)
-    }
-    async fn update_team(&self, _id: &str, _p: &UpdateTeamParams) -> Result<(), DbError> {
-        Ok(())
-    }
-    async fn delete_team(&self, _id: &str) -> Result<(), DbError> {
-        Ok(())
-    }
-
-    async fn write_message(&self, row: &MailboxMessageRow) -> Result<(), DbError> {
-        self.state.lock().unwrap().messages.push(row.clone());
-        Ok(())
-    }
-
-    async fn read_unread_and_mark(
-        &self,
-        team_id: &str,
-        to_agent_id: &str,
-    ) -> Result<Vec<MailboxMessageRow>, DbError> {
-        let mut state = self.state.lock().unwrap();
-        let mut result = vec![];
-        for msg in &mut state.messages {
-            if msg.team_id == team_id && msg.to_agent_id == to_agent_id && !msg.read {
-                msg.read = true;
-                result.push(msg.clone());
-            }
-        }
-        Ok(result)
-    }
-
-    async fn get_history(
-        &self,
-        team_id: &str,
-        to_agent_id: &str,
-        limit: Option<i64>,
-    ) -> Result<Vec<MailboxMessageRow>, DbError> {
-        let state = self.state.lock().unwrap();
-        let iter = state
-            .messages
-            .iter()
-            .filter(|m| m.team_id == team_id && m.to_agent_id == to_agent_id);
-        let msgs: Vec<_> = match limit {
-            Some(n) => iter.take(n as usize).cloned().collect(),
-            None => iter.cloned().collect(),
-        };
-        Ok(msgs)
-    }
-
-    async fn delete_mailbox_by_team(&self, team_id: &str) -> Result<(), DbError> {
-        self.state
-            .lock()
-            .unwrap()
-            .messages
-            .retain(|m| m.team_id != team_id);
-        Ok(())
-    }
-
-    async fn create_task(&self, row: &TeamTaskRow) -> Result<(), DbError> {
-        self.state.lock().unwrap().tasks.push(row.clone());
-        Ok(())
-    }
-
-    async fn find_task_by_id(
-        &self,
-        team_id: &str,
-        task_id: &str,
-    ) -> Result<Option<TeamTaskRow>, DbError> {
-        let state = self.state.lock().unwrap();
-        let found = state
-            .tasks
-            .iter()
-            .find(|t| t.team_id == team_id && t.id == task_id)
-            .cloned();
-        Ok(found)
-    }
-
-    async fn update_task(
-        &self,
-        task_id: &str,
-        params: &UpdateTaskParams,
-    ) -> Result<(), DbError> {
-        let mut state = self.state.lock().unwrap();
-        let task = state
-            .tasks
-            .iter_mut()
-            .find(|t| t.id == task_id)
-            .ok_or_else(|| DbError::NotFound(task_id.to_owned()))?;
-        if let Some(ref s) = params.status {
-            task.status = s.clone();
-        }
-        if let Some(ref d) = params.description {
-            task.description = Some(d.clone());
-        }
-        if let Some(ref o) = params.owner {
-            task.owner = Some(o.clone());
-        }
-        if let Some(ref b) = params.blocked_by {
-            task.blocked_by = b.clone();
-        }
-        if let Some(ref m) = params.metadata {
-            task.metadata = Some(m.clone());
-        }
-        task.updated_at = aionui_common::now_ms();
-        Ok(())
-    }
-
-    async fn list_tasks(&self, team_id: &str) -> Result<Vec<TeamTaskRow>, DbError> {
-        let state = self.state.lock().unwrap();
-        let tasks = state
-            .tasks
-            .iter()
-            .filter(|t| t.team_id == team_id)
-            .cloned()
-            .collect();
-        Ok(tasks)
-    }
-
-    async fn append_to_blocks(
-        &self,
-        task_id: &str,
-        blocked_task_id: &str,
-    ) -> Result<(), DbError> {
-        let mut state = self.state.lock().unwrap();
-        let task = state
-            .tasks
-            .iter_mut()
-            .find(|t| t.id == task_id)
-            .ok_or_else(|| DbError::NotFound(task_id.to_owned()))?;
-        let mut blocks: Vec<String> = serde_json::from_str(&task.blocks).unwrap_or_default();
-        blocks.push(blocked_task_id.to_owned());
-        task.blocks = serde_json::to_string(&blocks).unwrap();
-        Ok(())
-    }
-
-    async fn remove_from_blocked_by(
-        &self,
-        task_id: &str,
-        unblocked_task_id: &str,
-    ) -> Result<(), DbError> {
-        let mut state = self.state.lock().unwrap();
-        let task = state
-            .tasks
-            .iter_mut()
-            .find(|t| t.id == task_id)
-            .ok_or_else(|| DbError::NotFound(task_id.to_owned()))?;
-        let mut blocked_by: Vec<String> =
-            serde_json::from_str(&task.blocked_by).unwrap_or_default();
-        blocked_by.retain(|id| id != unblocked_task_id);
-        task.blocked_by = serde_json::to_string(&blocked_by).unwrap();
-        Ok(())
-    }
-
-    async fn delete_tasks_by_team(&self, team_id: &str) -> Result<(), DbError> {
-        self.state
-            .lock()
-            .unwrap()
-            .tasks
-            .retain(|t| t.team_id != team_id);
-        Ok(())
     }
 }
 
@@ -440,7 +250,7 @@ async fn tools_list_returns_all_8_tools() {
 }
 
 // ---------------------------------------------------------------------------
-// Tests: team_send_message (TS-1, TS-2)
+// Tests: team_send_message (TS-1, TS-2, TS-3)
 // ---------------------------------------------------------------------------
 
 #[tokio::test]
@@ -481,9 +291,52 @@ async fn ts2_broadcast_message() {
     env.server.stop();
 }
 
+#[tokio::test]
+async fn ts3_send_message_to_nonexistent_agent() {
+    let env = setup().await;
+    let mut stream = connect_and_init(env.server.port(), "test-token-123", "lead-1").await;
+
+    let resp = call_tool(
+        &mut stream,
+        2,
+        "team_send_message",
+        json!({"to": "nonexistent", "message": "Hello?"}),
+    )
+    .await;
+
+    // Mailbox accepts writes to any agent_id; message is written but never read.
+    // This is by design: the mailbox layer doesn't enforce agent existence.
+    assert!(!is_error_response(&resp));
+    let text = extract_text(&resp);
+    assert!(text.contains("nonexistent"));
+
+    env.server.stop();
+}
+
 // ---------------------------------------------------------------------------
 // Tests: team_spawn_agent (SP-1, SP-2, SP-3)
 // ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn sp1_lead_spawns_whitelisted_agent() {
+    let env = setup().await;
+    let mut stream = connect_and_init(env.server.port(), "test-token-123", "lead-1").await;
+
+    let resp = call_tool(
+        &mut stream,
+        2,
+        "team_spawn_agent",
+        json!({"name": "Helper", "role": "worker", "backend": "claude"}),
+    )
+    .await;
+
+    assert!(!is_error_response(&resp));
+    let text = extract_text(&resp);
+    assert!(text.contains("Helper"));
+    assert!(text.contains("spawn"));
+
+    env.server.stop();
+}
 
 #[tokio::test]
 async fn sp2_non_whitelisted_backend_rejected() {
@@ -526,7 +379,7 @@ async fn sp3_teammate_cannot_spawn() {
 }
 
 // ---------------------------------------------------------------------------
-// Tests: team_task_create / team_task_list (TTC-1, TTL-1, TTL-2)
+// Tests: team_task_create / team_task_list (TTC-1, TTC-2, TTL-1, TTL-2)
 // ---------------------------------------------------------------------------
 
 #[tokio::test]
@@ -545,6 +398,45 @@ async fn ttc1_create_basic_task() {
     assert!(!is_error_response(&resp));
     let text = extract_text(&resp);
     assert!(text.contains("Implement feature X"));
+
+    env.server.stop();
+}
+
+#[tokio::test]
+async fn ttc2_create_task_with_dependency() {
+    let env = setup().await;
+    let mut stream = connect_and_init(env.server.port(), "test-token-123", "lead-1").await;
+
+    call_tool(
+        &mut stream,
+        2,
+        "team_task_create",
+        json!({"subject": "Task A"}),
+    )
+    .await;
+
+    let list_resp = call_tool(&mut stream, 3, "team_task_list", json!({})).await;
+    let tasks: Vec<Value> = serde_json::from_str(&extract_text(&list_resp)).unwrap();
+    let task_a_id = tasks[0]["id"].as_str().unwrap();
+
+    let resp = call_tool(
+        &mut stream,
+        4,
+        "team_task_create",
+        json!({"subject": "Task B", "blockedBy": [task_a_id]}),
+    )
+    .await;
+
+    assert!(!is_error_response(&resp));
+
+    let list_resp2 = call_tool(&mut stream, 5, "team_task_list", json!({})).await;
+    let tasks2: Vec<Value> = serde_json::from_str(&extract_text(&list_resp2)).unwrap();
+    assert_eq!(tasks2.len(), 2);
+
+    let task_b = tasks2.iter().find(|t| t["subject"] == "Task B").unwrap();
+    let blocked_by: Vec<String> =
+        serde_json::from_value(task_b["blockedBy"].clone()).unwrap_or_default();
+    assert!(blocked_by.contains(&task_a_id.to_string()));
 
     env.server.stop();
 }
@@ -582,6 +474,62 @@ async fn ttl1_task_list_after_create() {
     let tasks: Vec<Value> = serde_json::from_str(&text).unwrap();
     assert_eq!(tasks.len(), 1);
     assert_eq!(tasks[0]["subject"], "Task A");
+
+    env.server.stop();
+}
+
+// ---------------------------------------------------------------------------
+// Tests: team_task_update (TTU-1, TTU-2, TTU-3)
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn ttu1_update_task_status() {
+    let env = setup().await;
+    let mut stream = connect_and_init(env.server.port(), "test-token-123", "lead-1").await;
+
+    call_tool(
+        &mut stream,
+        2,
+        "team_task_create",
+        json!({"subject": "Task A"}),
+    )
+    .await;
+
+    let list_resp = call_tool(&mut stream, 3, "team_task_list", json!({})).await;
+    let tasks: Vec<Value> = serde_json::from_str(&extract_text(&list_resp)).unwrap();
+    let task_id = tasks[0]["id"].as_str().unwrap();
+
+    let resp = call_tool(
+        &mut stream,
+        4,
+        "team_task_update",
+        json!({"taskId": task_id, "status": "completed"}),
+    )
+    .await;
+
+    assert!(!is_error_response(&resp));
+
+    let list_resp2 = call_tool(&mut stream, 5, "team_task_list", json!({})).await;
+    let tasks2: Vec<Value> = serde_json::from_str(&extract_text(&list_resp2)).unwrap();
+    assert_eq!(tasks2[0]["status"], "completed");
+
+    env.server.stop();
+}
+
+#[tokio::test]
+async fn ttu3_update_nonexistent_task() {
+    let env = setup().await;
+    let mut stream = connect_and_init(env.server.port(), "test-token-123", "lead-1").await;
+
+    let resp = call_tool(
+        &mut stream,
+        2,
+        "team_task_update",
+        json!({"taskId": "nonexistent-id", "status": "completed"}),
+    )
+    .await;
+
+    assert!(is_error_response(&resp));
 
     env.server.stop();
 }
