@@ -46,7 +46,8 @@ async fn main() -> Result<()> {
     // Initialize database and all services
     info!("Initializing database at {}", config.database_path().display());
     let database = aionui_db::init_database(&config.database_path()).await?;
-    let services = AppServices::from_database(database).await?;
+    let services =
+        AppServices::from_database_with_data_dir(database, config.data_dir.clone()).await?;
 
     // Check bootstrap status
     let has_users = services.user_repo.has_users().await?;

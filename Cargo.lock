@@ -123,6 +123,7 @@ dependencies = [
  "git2",
  "http-body-util",
  "reqwest",
+ "rust_xlsxwriter",
  "serde",
  "serde_json",
  "sha2",
@@ -331,9 +332,11 @@ name = "aionui-office"
 version = "0.1.0"
 dependencies = [
  "aionui-api-types",
+ "aionui-auth",
  "aionui-common",
  "aionui-realtime",
  "async-trait",
+ "axum",
  "calamine",
  "dashmap",
  "reqwest",

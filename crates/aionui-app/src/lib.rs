@@ -41,6 +41,10 @@ use aionui_channel::{ChannelRouterState, channel_routes};
 use aionui_channel::weixin_login_route;
 use aionui_team::{TeamRouterState, TeamSessionService, team_routes};
 use aionui_cron::{CronEventEmitter, CronRouterState, cron_routes};
+use aionui_office::{
+    ConversionService, OfficecliWatchManager, OfficeRouterState, ProxyService, SnapshotService as OfficeSnapshotService,
+    StarOfficeDetector, office_proxy_routes, office_routes,
+};
 use aionui_realtime::{
     BroadcastEventBus, NoopMessageRouter, WebSocketManager, WsHandlerState, ws_upgrade_handler,
 };
@@ -91,6 +95,7 @@ pub struct AppServices {
     pub worker_task_manager: Arc<dyn IWorkerTaskManager>,
     /// Raw JWT secret string, used to derive encryption keys.
     pub jwt_secret_raw: String,
+    pub data_dir: String,
 }
 
 impl AppServices {
@@ -110,6 +115,13 @@ impl AppServices {
     /// Resolves JWT secret (env → db → generate), constructs all shared
     /// services, and persists a newly generated secret to the database.
     pub async fn from_database(database: Database) -> anyhow::Result<Self> {
+        Self::from_database_with_data_dir(database, "data".to_string()).await
+    }
+
+    pub async fn from_database_with_data_dir(
+        database: Database,
+        data_dir: String,
+    ) -> anyhow::Result<Self> {
         let user_repo: Arc<dyn IUserRepository> =
             Arc::new(SqliteUserRepository::new(database.pool().clone()));
 
@@ -160,6 +172,7 @@ impl AppServices {
             event_bus: Arc::new(BroadcastEventBus::new(256)),
             worker_task_manager,
             jwt_secret_raw: secret,
+            data_dir,
         })
     }
 }
@@ -200,6 +213,7 @@ pub struct ModuleStates {
     pub channel: ChannelRouterState,
     pub team: TeamRouterState,
     pub cron: CronRouterState,
+    pub office: OfficeRouterState,
 }
 
 /// Build all default `ModuleStates` from application services.
@@ -220,6 +234,7 @@ pub async fn build_module_states(services: &AppServices) -> ModuleStates {
         channel: build_channel_state(services),
         team: build_team_state(services),
         cron: build_cron_state(services),
+        office: build_office_state(services),
     }
 }
 
@@ -464,6 +479,31 @@ pub fn build_cron_state(services: &AppServices) -> CronRouterState {
     CronRouterState { cron_service }
 }
 
+/// Build the default `OfficeRouterState` from application services.
+pub fn build_office_state(services: &AppServices) -> OfficeRouterState {
+    let data_dir = std::path::Path::new(&services.data_dir);
+
+    let spawner: Arc<dyn aionui_office::ProcessSpawner> =
+        Arc::new(aionui_office::DefaultProcessSpawner);
+    let watch_manager = Arc::new(OfficecliWatchManager::new(
+        spawner,
+        services.event_bus.clone(),
+    ));
+
+    let snapshot_service = Arc::new(OfficeSnapshotService::new(data_dir));
+    let star_office_detector = Arc::new(StarOfficeDetector::new(reqwest::Client::new()));
+    let conversion_service = Arc::new(ConversionService::new(None));
+    let proxy_service = Arc::new(ProxyService::new(watch_manager.clone()));
+
+    OfficeRouterState {
+        watch_manager,
+        snapshot_service,
+        star_office_detector,
+        conversion_service,
+        proxy_service,
+    }
+}
+
 /// Helper to break the circular reference between CronScheduler and CronService.
 ///
 /// The scheduler's tick callback needs to call `CronService::tick()`, but
@@ -631,7 +671,14 @@ pub fn create_router_with_all_state(
 
     // Cron routes protected by auth middleware
     let cron_authenticated = cron_routes(states.cron)
+        .route_layer(from_fn_with_state(auth_mw_state.clone(), auth_middleware));
+
+    // Office routes protected by auth middleware
+    let office_authenticated = office_routes(states.office.clone())
         .route_layer(from_fn_with_state(auth_mw_state, auth_middleware));
+
+    // Office proxy routes — exempt from auth (serve iframe content)
+    let office_proxy = office_proxy_routes(states.office);
 
     // WebSocket upgrade route — exempt from CSRF (no cookie-based
     // double-submit) but still gets security response headers.
@@ -655,7 +702,8 @@ pub fn create_router_with_all_state(
         .merge(skill_authenticated)
         .merge(channel_authenticated)
         .merge(team_authenticated)
-        .merge(cron_authenticated);
+        .merge(cron_authenticated)
+        .merge(office_authenticated);
 
     // Conditionally merge WeChat login SSE route (feature-gated)
     #[cfg(feature = "weixin")]
@@ -667,6 +715,7 @@ pub fn create_router_with_all_state(
             csrf_middleware,
         ))
         .merge(ws_routes)
+        .merge(office_proxy)
         .layer(middleware::from_fn(security_headers_middleware))
 }
 
