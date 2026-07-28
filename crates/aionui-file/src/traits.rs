@@ -169,7 +169,7 @@ pub trait IFileWatchService: Send + Sync {
 /// Supports two modes:
 /// - **git-repo**: directory already has `.git` — uses it directly.
 /// - **snapshot**: no `.git` — creates a temporary repo under
-    ///   `/tmp/carbonfusion-snapshot-*`.
+///   `/tmp/carbonfusion-snapshot-*`.
 #[async_trait::async_trait]
 pub trait ISnapshotService: Send + Sync {
     /// Initialize the snapshot system for a workspace.

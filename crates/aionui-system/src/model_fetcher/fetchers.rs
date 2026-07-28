@@ -199,7 +199,9 @@ async fn fetch_bedrock(config: &FetchConfig) -> Result<Vec<ModelInfo>, SystemErr
                 .ok_or_else(|| SystemError::BadRequest("secretAccessKey is required".into()))?;
 
             let creds = aws_sdk_bedrock::config::Credentials::new(
-                key_id, secret, None, // session token
+                key_id,
+                secret,
+                None, // session token
                 None, // expiry
                 "carbonfusion",
             );

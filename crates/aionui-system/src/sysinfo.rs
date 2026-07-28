@@ -119,18 +119,27 @@ mod tests {
         // We cannot reliably set env in parallel tests, so just verify
         // the default path contains "carbonfusion".
         let dir = resolve_cache_dir();
-        assert!(dir.contains("carbonfusion"), "cache_dir should contain 'carbonfusion': {dir}");
+        assert!(
+            dir.contains("carbonfusion"),
+            "cache_dir should contain 'carbonfusion': {dir}"
+        );
     }
 
     #[test]
     fn test_env_override_work_dir() {
         let dir = resolve_work_dir();
-        assert!(dir.contains("carbonfusion"), "work_dir should contain 'carbonfusion': {dir}");
+        assert!(
+            dir.contains("carbonfusion"),
+            "work_dir should contain 'carbonfusion': {dir}"
+        );
     }
 
     #[test]
     fn test_env_override_log_dir() {
         let dir = resolve_log_dir();
-        assert!(dir.contains("carbonfusion"), "log_dir should contain 'carbonfusion': {dir}");
+        assert!(
+            dir.contains("carbonfusion"),
+            "log_dir should contain 'carbonfusion': {dir}"
+        );
     }
 }

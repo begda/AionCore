@@ -103,7 +103,10 @@ fn resolve_scan_paths_inner(
         }
     } else {
         if let Some(home) = dirs::home_dir() {
-            push(home.join(".carbonfusion").join(EXTENSIONS_DIR_NAME), ExtensionSource::Local);
+            push(
+                home.join(".carbonfusion").join(EXTENSIONS_DIR_NAME),
+                ExtensionSource::Local,
+            );
         }
 
         // 3. AppData directory (platform-specific).

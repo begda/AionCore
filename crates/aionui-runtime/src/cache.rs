@@ -35,9 +35,9 @@ pub fn init(data_dir: impl AsRef<Path>) {
 /// 1. Path supplied via [`init`] (`{data_dir}/runtime`) when the backend
 ///    started with `--data-dir`.
 /// 2. Platform cache dir (via `dirs::cache_dir()`):
-    /// - macOS:   `~/Library/Caches/carbonfusion/runtime`
-    /// - Linux:   `$XDG_CACHE_HOME/carbonfusion/runtime` (fallback `~/.cache/carbonfusion/runtime`)
-    /// - Windows: `%LOCALAPPDATA%\carbonfusion\runtime`
+/// - macOS:   `~/Library/Caches/carbonfusion/runtime`
+/// - Linux:   `$XDG_CACHE_HOME/carbonfusion/runtime` (fallback `~/.cache/carbonfusion/runtime`)
+/// - Windows: `%LOCALAPPDATA%\carbonfusion\runtime`
 ///
 /// Returns `None` only when neither [`init`] has run nor a platform cache
 /// dir is determinable (exotic envs).
@@ -82,5 +82,4 @@ mod tests {
             vec!["node".to_string(), "runtime".to_string(), "carbonfusion".to_string()]
         );
     }
-
 }

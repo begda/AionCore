@@ -2,7 +2,11 @@
 
 use serde_json::{Value, json};
 
-const RUNTIME_ENV: [&str; 3] = ["CARBONFUSION_BASE_URL", "CARBONFUSION_CONVERSATION_ID", "CARBONFUSION_USER_ID"];
+const RUNTIME_ENV: [&str; 3] = [
+    "CARBONFUSION_BASE_URL",
+    "CARBONFUSION_CONVERSATION_ID",
+    "CARBONFUSION_USER_ID",
+];
 
 pub(crate) fn data() -> Value {
     json!({

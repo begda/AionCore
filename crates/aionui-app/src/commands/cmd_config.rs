@@ -22,7 +22,6 @@ const ENV_BASE_URL: &str = "CARBONFUSION_BASE_URL";
 const ENV_CONVERSATION_ID: &str = "CARBONFUSION_CONVERSATION_ID";
 const ENV_USER_ID: &str = "CARBONFUSION_USER_ID";
 
-
 pub async fn run_config(args: ConfigArgs) -> ExitCode {
     match run(args).await {
         Ok(()) => ExitCode::SUCCESS,

@@ -16,7 +16,6 @@ const ENV_USER_ID: &str = "CARBONFUSION_USER_ID";
 const ENV_CONVERSATION_ID: &str = "CARBONFUSION_CONVERSATION_ID";
 const ENV_RUNTIME_TOKEN: &str = "CARBONFUSION_RUNTIME_TOKEN";
 
-
 pub(crate) async fn run_team(args: TeamArgs) -> ExitCode {
     match run_team_inner(args).await {
         Ok(()) => ExitCode::SUCCESS,
