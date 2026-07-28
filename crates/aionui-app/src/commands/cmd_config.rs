@@ -18,9 +18,10 @@ use crate::cli::{
 };
 use crate::commands::config_capabilities;
 
-const ENV_BASE_URL: &str = "AIONUI_BASE_URL";
-const ENV_CONVERSATION_ID: &str = "AIONUI_CONVERSATION_ID";
-const ENV_USER_ID: &str = "AIONUI_USER_ID";
+const ENV_BASE_URL: &str = "CARBONFUSION_BASE_URL";
+const ENV_CONVERSATION_ID: &str = "CARBONFUSION_CONVERSATION_ID";
+const ENV_USER_ID: &str = "CARBONFUSION_USER_ID";
+
 
 pub async fn run_config(args: ConfigArgs) -> ExitCode {
     match run(args).await {
@@ -1791,7 +1792,7 @@ mod tests {
 
         assert_eq!(
             error.stderr_line(),
-            "CONFIG_ENV_MISSING command=\"config context\" field=\"AIONUI_CONVERSATION_ID\": missing required environment variable"
+            "CONFIG_ENV_MISSING command=\"config context\" field=\"CARBONFUSION_CONVERSATION_ID\": missing required environment variable"
         );
     }
 

@@ -94,7 +94,7 @@ async fn connect_cookie(
         .header("Upgrade", "websocket")
         .header("Sec-WebSocket-Version", "13")
         .header("Sec-WebSocket-Key", tungstenite::handshake::client::generate_key())
-        .header("Cookie", format!("aionui-session={token}"))
+        .header("Cookie", format!("carbonfusion-session={token}"))
         .body(())
         .unwrap();
 

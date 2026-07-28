@@ -2,7 +2,7 @@
 
 use serde_json::{Value, json};
 
-const RUNTIME_ENV: [&str; 3] = ["AIONUI_BASE_URL", "AIONUI_CONVERSATION_ID", "AIONUI_USER_ID"];
+const RUNTIME_ENV: [&str; 3] = ["CARBONFUSION_BASE_URL", "CARBONFUSION_CONVERSATION_ID", "CARBONFUSION_USER_ID"];
 
 pub(crate) fn data() -> Value {
     json!({
@@ -14,15 +14,15 @@ pub(crate) fn data() -> Value {
             "business_flags": false,
             "selectors": {
                 "assistant_id": {
-                    "current": "resolve via AIONUI_CONVERSATION_ID",
+                    "current": "resolve via CARBONFUSION_CONVERSATION_ID",
                     "literal": "treat as assistant id"
                 },
                 "conversation_id": {
-                    "current": "resolve from AIONUI_CONVERSATION_ID",
+                    "current": "resolve from CARBONFUSION_CONVERSATION_ID",
                     "literal": "treat as conversation id"
                 },
                 "user_id": {
-                    "current": "resolve from AIONUI_USER_ID",
+                    "current": "resolve from CARBONFUSION_USER_ID",
                     "literal": "treat as user id"
                 }
             }
@@ -39,7 +39,7 @@ pub(crate) fn data() -> Value {
             }
         },
         "runtime_context": {
-            "primary": "AIONUI_CONVERSATION_ID",
+            "primary": "CARBONFUSION_CONVERSATION_ID",
             "environment": RUNTIME_ENV
         },
         "safety": {

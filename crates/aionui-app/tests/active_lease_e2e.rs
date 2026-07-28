@@ -17,7 +17,7 @@ fn empty_post_with_token(uri: &str, token: &str, csrf: &str) -> Request<Body> {
         .uri(uri)
         .header("authorization", format!("Bearer {token}"))
         .header("x-csrf-token", csrf)
-        .header("cookie", format!("aionui-csrf-token={csrf}"))
+        .header("cookie", format!("carbonfusion-csrf-token={csrf}"))
         .body(Body::empty())
         .unwrap()
 }
@@ -36,7 +36,7 @@ fn empty_post_without_auth(uri: &str, csrf: &str) -> Request<Body> {
         .method("POST")
         .uri(uri)
         .header("x-csrf-token", csrf)
-        .header("cookie", format!("aionui-csrf-token={csrf}"))
+        .header("cookie", format!("carbonfusion-csrf-token={csrf}"))
         .body(Body::empty())
         .unwrap()
 }

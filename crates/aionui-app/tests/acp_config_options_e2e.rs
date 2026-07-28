@@ -66,7 +66,7 @@ async fn runtime_ensure_requires_auth() {
                 .method("POST")
                 .uri("/api/conversations/conv-1/runtime/ensure")
                 .header("x-csrf-token", csrf)
-                .header("cookie", format!("aionui-csrf-token={csrf}"))
+                .header("cookie", format!("carbonfusion-csrf-token={csrf}"))
                 .body(Body::empty())
                 .unwrap(),
         )

@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 /// caused `invalid_request_error: 工具名称过长` (ELECTRON-1JY). Team routing
 /// has always been done via per-team TCP port + auth token, so the team_id was
 /// redundant in the server name.
-pub const TEAM_MCP_SERVER_NAME: &str = "aionui-team";
+pub const TEAM_MCP_SERVER_NAME: &str = "carbonfusion-team";
 
 /// Stdio connection config for the team session MCP server.
 ///

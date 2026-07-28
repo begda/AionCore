@@ -12,11 +12,11 @@ not call raw backend paths, and do not depend on tools outside the bundled
 
 ## Rules
 
-1. Use only `"$AIONUI_HELPER_BIN" config ...`.
+1. Use only `"$CARBONFUSION_HELPER_BIN" config ...`.
 2. Never pass, inline, export, echo, or set any `AIONUI_...` environment variable.
 3. Put all command input in stdin JSON.
 4. Do not use flags for business fields.
-5. Use `"$AIONUI_HELPER_BIN" config capabilities` when unsure which config command or stdin fields are supported.
+5. Use `"$CARBONFUSION_HELPER_BIN" config capabilities` when unsure which config command or stdin fields are supported.
 6. Read context before changing the current assistant.
 7. Read before writing, then read back after writing.
 8. Use `"assistant_id": "current"` when the user asks to change the assistant used by this conversation.
@@ -47,7 +47,7 @@ Failures print one stable error line to stderr. Treat stderr as authoritative.
 Ask aioncore what this version supports:
 
 ```bash
-"$AIONUI_HELPER_BIN" config capabilities
+"$CARBONFUSION_HELPER_BIN" config capabilities
 ```
 
 The result is a JSON envelope whose `data.domains[].commands[]` entries list
@@ -60,7 +60,7 @@ redacted from ordinary output.
 Read the current user, conversation, assistant, and local runtime context:
 
 ```bash
-"$AIONUI_HELPER_BIN" config context
+"$CARBONFUSION_HELPER_BIN" config context
 ```
 
 If `data.assistant` is `null`, the current conversation is not backed by an
@@ -92,13 +92,13 @@ and read back, then state that it will affect new conversations only.
 List assistants:
 
 ```bash
-"$AIONUI_HELPER_BIN" config assistants list
+"$CARBONFUSION_HELPER_BIN" config assistants list
 ```
 
 Inspect the current assistant:
 
 ```bash
-"$AIONUI_HELPER_BIN" config assistants get <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config assistants get <<'JSON'
 {
   "assistant_id": "current",
   "locale": "en-US"
@@ -112,7 +112,7 @@ content, use the user's actual locale.
 Create an assistant:
 
 ```bash
-"$AIONUI_HELPER_BIN" config assistants create <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config assistants create <<'JSON'
 {
   "name": "Requirements Analyst",
   "description": "Turn rough product ideas into clear PRDs",
@@ -129,7 +129,7 @@ JSON
 Update assistant metadata or defaults:
 
 ```bash
-"$AIONUI_HELPER_BIN" config assistants update <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config assistants update <<'JSON'
 {
   "assistant_id": "current",
   "locale": "en-US",
@@ -152,7 +152,7 @@ defaults, report that the saved change applies to new conversations only.
 Enable, disable, or reorder an assistant:
 
 ```bash
-"$AIONUI_HELPER_BIN" config assistants state <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config assistants state <<'JSON'
 {
   "assistant_id": "current",
   "enabled": true,
@@ -168,7 +168,7 @@ Assistant rules are the system prompt that defines assistant behavior.
 Read the current assistant rule:
 
 ```bash
-"$AIONUI_HELPER_BIN" config assistants rule read <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config assistants rule read <<'JSON'
 {
   "assistant_id": "current",
   "locale": "en-US"
@@ -179,7 +179,7 @@ JSON
 Write the current assistant rule:
 
 ```bash
-"$AIONUI_HELPER_BIN" config assistants rule write <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config assistants rule write <<'JSON'
 {
   "assistant_id": "current",
   "locale": "en-US",
@@ -201,13 +201,13 @@ with.
 List available skills:
 
 ```bash
-"$AIONUI_HELPER_BIN" config skills list
+"$CARBONFUSION_HELPER_BIN" config skills list
 ```
 
 Inspect a skill directory before importing:
 
 ```bash
-"$AIONUI_HELPER_BIN" config skills info <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config skills info <<'JSON'
 {
   "skill_path": "/absolute/path/to/skill"
 }
@@ -217,7 +217,7 @@ JSON
 Import a skill:
 
 ```bash
-"$AIONUI_HELPER_BIN" config skills import <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config skills import <<'JSON'
 {
   "skill_path": "/absolute/path/to/skill-or-parent-or-zip"
 }
@@ -227,7 +227,7 @@ JSON
 Attach skills to an assistant by updating the assistant's full skill list:
 
 ```bash
-"$AIONUI_HELPER_BIN" config assistants update <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config assistants update <<'JSON'
 {
   "assistant_id": "current",
   "enabled_skills": ["aionui-config", "cron"]
@@ -245,11 +245,11 @@ the current runtime already exposes them.
 Manage external skill paths:
 
 ```bash
-"$AIONUI_HELPER_BIN" config skills external-paths list
+"$CARBONFUSION_HELPER_BIN" config skills external-paths list
 ```
 
 ```bash
-"$AIONUI_HELPER_BIN" config skills external-paths add <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config skills external-paths add <<'JSON'
 {
   "name": "Team Skills",
   "path": "/absolute/path/to/team-skills"
@@ -258,7 +258,7 @@ JSON
 ```
 
 ```bash
-"$AIONUI_HELPER_BIN" config skills external-paths remove <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config skills external-paths remove <<'JSON'
 {
   "path": "/absolute/path/to/team-skills"
 }
@@ -268,11 +268,11 @@ JSON
 Enable or disable the skills market:
 
 ```bash
-"$AIONUI_HELPER_BIN" config skills market enable
+"$CARBONFUSION_HELPER_BIN" config skills market enable
 ```
 
 ```bash
-"$AIONUI_HELPER_BIN" config skills market disable
+"$CARBONFUSION_HELPER_BIN" config skills market disable
 ```
 
 ## MCP Servers
@@ -280,13 +280,13 @@ Enable or disable the skills market:
 List MCP servers:
 
 ```bash
-"$AIONUI_HELPER_BIN" config mcp servers list
+"$CARBONFUSION_HELPER_BIN" config mcp servers list
 ```
 
 Create an MCP server:
 
 ```bash
-"$AIONUI_HELPER_BIN" config mcp servers create <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config mcp servers create <<'JSON'
 {
   "name": "Local Tools",
   "transport": {
@@ -302,7 +302,7 @@ JSON
 Update an MCP server:
 
 ```bash
-"$AIONUI_HELPER_BIN" config mcp servers update <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config mcp servers update <<'JSON'
 {
   "server_id": "mcp_123",
   "description": "Updated description"
@@ -313,7 +313,7 @@ JSON
 Test a server configuration:
 
 ```bash
-"$AIONUI_HELPER_BIN" config mcp test-connection <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config mcp test-connection <<'JSON'
 {
   "name": "Local Tools",
   "transport": {
@@ -328,7 +328,7 @@ JSON
 OAuth helpers:
 
 ```bash
-"$AIONUI_HELPER_BIN" config mcp oauth check-status <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config mcp oauth check-status <<'JSON'
 {
   "server_url": "https://mcp.example.com"
 }
@@ -343,13 +343,13 @@ sensitive fields by default.
 List model providers:
 
 ```bash
-"$AIONUI_HELPER_BIN" config providers list
+"$CARBONFUSION_HELPER_BIN" config providers list
 ```
 
 Create a provider:
 
 ```bash
-"$AIONUI_HELPER_BIN" config providers create <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config providers create <<'JSON'
 {
   "name": "OpenAI",
   "platform": "openai",
@@ -362,7 +362,7 @@ JSON
 Update a provider:
 
 ```bash
-"$AIONUI_HELPER_BIN" config providers update <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config providers update <<'JSON'
 {
   "provider_id": "provider_123",
   "api_key": "sk-..."
@@ -373,7 +373,7 @@ JSON
 Detect protocol, fetch models, or run a provider health check:
 
 ```bash
-"$AIONUI_HELPER_BIN" config providers detect-protocol <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config providers detect-protocol <<'JSON'
 {
   "base_url": "https://api.example.com/v1",
   "api_key": "..."
@@ -382,7 +382,7 @@ JSON
 ```
 
 ```bash
-"$AIONUI_HELPER_BIN" config providers models fetch <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config providers models fetch <<'JSON'
 {
   "provider_id": "provider_123"
 }
@@ -390,7 +390,7 @@ JSON
 ```
 
 ```bash
-"$AIONUI_HELPER_BIN" config providers health-check <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config providers health-check <<'JSON'
 {
   "provider_id": "provider_123",
   "model": "gpt-4.1"
@@ -405,13 +405,13 @@ Never reveal provider keys. Do not repeat secret values from the user's input.
 Read backend settings:
 
 ```bash
-"$AIONUI_HELPER_BIN" config settings get
+"$CARBONFUSION_HELPER_BIN" config settings get
 ```
 
 Patch backend settings:
 
 ```bash
-"$AIONUI_HELPER_BIN" config settings patch <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config settings patch <<'JSON'
 {
   "language": "en-US",
   "notification_enabled": true
@@ -425,11 +425,11 @@ Supported patch fields: `language`, `notification_enabled`, `cron_notification_e
 Read or update client preferences:
 
 ```bash
-"$AIONUI_HELPER_BIN" config settings client get
+"$CARBONFUSION_HELPER_BIN" config settings client get
 ```
 
 ```bash
-"$AIONUI_HELPER_BIN" config settings client put <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config settings client put <<'JSON'
 {
   "ui.zoomFactor": 1.2
 }
@@ -444,13 +444,13 @@ user or read back first to discover keys in use — there is no fixed schema.
 List available agents:
 
 ```bash
-"$AIONUI_HELPER_BIN" config agents list
+"$CARBONFUSION_HELPER_BIN" config agents list
 ```
 
 Enable or disable an agent:
 
 ```bash
-"$AIONUI_HELPER_BIN" config agents enable <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config agents enable <<'JSON'
 {
   "agent_id": "codex",
   "enabled": true
@@ -461,7 +461,7 @@ JSON
 Read or set per-agent overrides:
 
 ```bash
-"$AIONUI_HELPER_BIN" config agents overrides get <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config agents overrides get <<'JSON'
 {
   "agent_id": "codex"
 }
@@ -469,7 +469,7 @@ JSON
 ```
 
 ```bash
-"$AIONUI_HELPER_BIN" config agents overrides set <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config agents overrides set <<'JSON'
 {
   "agent_id": "codex",
   "command_override": "/absolute/path/to/codex"
@@ -480,7 +480,7 @@ JSON
 Create, update, delete, or test a custom agent:
 
 ```bash
-"$AIONUI_HELPER_BIN" config agents custom create <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config agents custom create <<'JSON'
 {
   "name": "Custom Agent",
   "command": "/absolute/path/to/agent-cli"
@@ -489,7 +489,7 @@ JSON
 ```
 
 ```bash
-"$AIONUI_HELPER_BIN" config agents custom update <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config agents custom update <<'JSON'
 {
   "agent_id": "custom_agent_123",
   "name": "Custom Agent",
@@ -507,13 +507,13 @@ For tasks tied to the current conversation, use the cron current commands.
 List current conversation tasks:
 
 ```bash
-"$AIONUI_HELPER_BIN" config cron current list
+"$CARBONFUSION_HELPER_BIN" config cron current list
 ```
 
 Create a task:
 
 ```bash
-"$AIONUI_HELPER_BIN" config cron current create <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config cron current create <<'JSON'
 {
   "name": "Daily Summary",
   "schedule": "0 18 * * MON-FRI",
@@ -526,7 +526,7 @@ JSON
 Update a task:
 
 ```bash
-"$AIONUI_HELPER_BIN" config cron current update <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config cron current update <<'JSON'
 {
   "job_id": "cron_123",
   "name": "Daily Summary",
@@ -545,13 +545,13 @@ For global cron job administration, use `config cron jobs`.
 List all cron jobs:
 
 ```bash
-"$AIONUI_HELPER_BIN" config cron jobs list
+"$CARBONFUSION_HELPER_BIN" config cron jobs list
 ```
 
 Create a cron job:
 
 ```bash
-"$AIONUI_HELPER_BIN" config cron jobs create <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config cron jobs create <<'JSON'
 {
   "name": "Weekly Report",
   "schedule": { "kind": "cron", "expr": "0 9 * * MON", "tz": "Asia/Shanghai" },
@@ -573,7 +573,7 @@ Use `"conversation_id": "current"` to attach the job to the current conversation
 Update, run, or manage a cron job skill:
 
 ```bash
-"$AIONUI_HELPER_BIN" config cron jobs update <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config cron jobs update <<'JSON'
 {
   "job_id": "cron_123",
   "name": "Weekly Report",
@@ -583,7 +583,7 @@ JSON
 ```
 
 ```bash
-"$AIONUI_HELPER_BIN" config cron jobs run <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config cron jobs run <<'JSON'
 {
   "job_id": "cron_123"
 }
@@ -591,7 +591,7 @@ JSON
 ```
 
 ```bash
-"$AIONUI_HELPER_BIN" config cron jobs skill save <<'JSON'
+"$CARBONFUSION_HELPER_BIN" config cron jobs skill save <<'JSON'
 {
   "job_id": "cron_123",
   "content": "# Skill\nTask-specific instructions."

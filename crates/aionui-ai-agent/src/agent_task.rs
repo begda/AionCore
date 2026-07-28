@@ -527,7 +527,7 @@ mod aionrs_config_option_tests {
             max_tool_call_malformed_turns: None,
             max_tool_call_failure_turns: None,
             compat_overrides: Default::default(),
-            session_directory: std::env::temp_dir().join("aionrs-agent-task-test-sessions"),
+            session_directory: std::env::temp_dir().join("carbonfusion-agent-task-test-sessions"),
             session_mode: None,
             skills: Vec::new(),
             extra_mcp_servers: std::collections::HashMap::new(),

@@ -216,9 +216,9 @@ async fn spawn_diagnose_probe_server(capture: SharedCapture) -> (String, tokio::
 async fn diagnose_capabilities_prints_agent_readable_contract_without_runtime_env() {
     let output = diagnose_command()
         .arg("capabilities")
-        .env_remove("AIONUI_BASE_URL")
-        .env_remove("AIONUI_CONVERSATION_ID")
-        .env_remove("AIONUI_USER_ID")
+        .env_remove("CARBONFUSION_BASE_URL")
+        .env_remove("CARBONFUSION_CONVERSATION_ID")
+        .env_remove("CARBONFUSION_USER_ID")
         .output()
         .await
         .unwrap();
@@ -263,9 +263,9 @@ async fn diagnose_health_reads_backend_health_from_runtime_base_url() {
 
     let output = diagnose_command()
         .arg("health")
-        .env("AIONUI_BASE_URL", &base_url)
-        .env("AIONUI_CONVERSATION_ID", "conv-health")
-        .env("AIONUI_USER_ID", "user-health")
+        .env("CARBONFUSION_BASE_URL", &base_url)
+        .env("CARBONFUSION_CONVERSATION_ID", "conv-health")
+        .env("CARBONFUSION_USER_ID", "user-health")
         .output()
         .await
         .unwrap();
@@ -289,9 +289,9 @@ async fn diagnose_conversation_get_resolves_current_conversation_selector_and_ad
 
     let mut child = diagnose_command()
         .args(["conversations", "get"])
-        .env("AIONUI_BASE_URL", &base_url)
-        .env("AIONUI_CONVERSATION_ID", "conv-current")
-        .env("AIONUI_USER_ID", "user-current")
+        .env("CARBONFUSION_BASE_URL", &base_url)
+        .env("CARBONFUSION_CONVERSATION_ID", "conv-current")
+        .env("CARBONFUSION_USER_ID", "user-current")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -338,9 +338,9 @@ async fn diagnose_http_get_is_get_only_redacted_escape_hatch_for_api_paths() {
 
     let mut child = diagnose_command()
         .args(["http", "get"])
-        .env("AIONUI_BASE_URL", &base_url)
-        .env("AIONUI_CONVERSATION_ID", "conv-http")
-        .env("AIONUI_USER_ID", "user-http")
+        .env("CARBONFUSION_BASE_URL", &base_url)
+        .env("CARBONFUSION_CONVERSATION_ID", "conv-http")
+        .env("CARBONFUSION_USER_ID", "user-http")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -380,9 +380,9 @@ async fn diagnose_http_get_rejects_paths_outside_health_and_api() {
 
     let mut child = diagnose_command()
         .args(["http", "get"])
-        .env("AIONUI_BASE_URL", &base_url)
-        .env("AIONUI_CONVERSATION_ID", "conv-http")
-        .env("AIONUI_USER_ID", "user-http")
+        .env("CARBONFUSION_BASE_URL", &base_url)
+        .env("CARBONFUSION_CONVERSATION_ID", "conv-http")
+        .env("CARBONFUSION_USER_ID", "user-http")
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -414,9 +414,9 @@ async fn diagnose_overview_aggregates_common_failure_signals() {
 
     let output = diagnose_command()
         .arg("overview")
-        .env("AIONUI_BASE_URL", &base_url)
-        .env("AIONUI_CONVERSATION_ID", "conv-overview")
-        .env("AIONUI_USER_ID", "user-overview")
+        .env("CARBONFUSION_BASE_URL", &base_url)
+        .env("CARBONFUSION_CONVERSATION_ID", "conv-overview")
+        .env("CARBONFUSION_USER_ID", "user-overview")
         .output()
         .await
         .unwrap();
@@ -454,7 +454,7 @@ async fn diagnose_logs_tail_reads_latest_aioncore_log_and_filters_errors() {
 
     let mut child = diagnose_command()
         .args(["logs", "tail"])
-        .env("AIONUI_LOG_DIR", temp.path())
+        .env("CARBONFUSION_LOG_DIR", temp.path())
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -495,8 +495,8 @@ fn builtin_troubleshooting_skill_uses_diagnose_cli_not_python_helper() {
             "aionui-troubleshooting skill must not mention {forbidden}"
         );
     }
-    assert!(skill.contains("\"$AIONUI_HELPER_BIN\" diagnose capabilities"));
-    assert!(skill.contains("\"$AIONUI_HELPER_BIN\" diagnose overview"));
-    assert!(skill.contains("\"$AIONUI_HELPER_BIN\" diagnose conversations get"));
-    assert!(skill.contains("\"$AIONUI_HELPER_BIN\" diagnose http get"));
+    assert!(skill.contains("\"$CARBONFUSION_HELPER_BIN\" diagnose capabilities"));
+    assert!(skill.contains("\"$CARBONFUSION_HELPER_BIN\" diagnose overview"));
+    assert!(skill.contains("\"$CARBONFUSION_HELPER_BIN\" diagnose conversations get"));
+    assert!(skill.contains("\"$CARBONFUSION_HELPER_BIN\" diagnose http get"));
 }

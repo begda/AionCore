@@ -22,7 +22,7 @@ pub struct ScanPath {
 ///
 /// Priority (highest first):
 /// 1. `$AIONUI_EXTENSIONS_PATH`
-/// 2. `~/.aionui/extensions/` — legacy user data directory
+/// 2. `~/.carbonfusion/extensions/` — legacy user data directory
 /// 3. Platform AppData directory
 ///
 /// In E2E test mode (`AIONUI_E2E_TEST=1`), only the environment variable
@@ -95,7 +95,7 @@ fn resolve_scan_paths_inner(
         return paths;
     }
 
-    // 2. User data directory (desktop data dir or historical ~/.aionui fallback).
+    // 2. User data directory (desktop data dir or historical ~/.carbonfusion fallback).
     if let Some(data_dir) = explicit_data_dir {
         push(data_dir.join(EXTENSIONS_DIR_NAME), ExtensionSource::Local);
         if let Some(appdata_dir) = derive_legacy_appdata_extensions_dir(data_dir) {
@@ -103,7 +103,7 @@ fn resolve_scan_paths_inner(
         }
     } else {
         if let Some(home) = dirs::home_dir() {
-            push(home.join(".aionui").join(EXTENSIONS_DIR_NAME), ExtensionSource::Local);
+            push(home.join(".carbonfusion").join(EXTENSIONS_DIR_NAME), ExtensionSource::Local);
         }
 
         // 3. AppData directory (platform-specific).

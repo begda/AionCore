@@ -33,9 +33,9 @@ fn extract_csrf_token(resp: &axum::response::Response) -> Option<String> {
         .get_all(header::SET_COOKIE)
         .iter()
         .filter_map(|v| v.to_str().ok())
-        .find(|s| s.starts_with("aionui-csrf-token="))
+        .find(|s| s.starts_with("carbonfusion-csrf-token="))
         .map(|s| {
-            s.strip_prefix("aionui-csrf-token=")
+            s.strip_prefix("carbonfusion-csrf-token=")
                 .unwrap()
                 .split(';')
                 .next()
@@ -50,9 +50,9 @@ fn extract_session_token(resp: &axum::response::Response) -> Option<String> {
         .get_all(header::SET_COOKIE)
         .iter()
         .filter_map(|v| v.to_str().ok())
-        .find(|s| s.starts_with("aionui-session="))
+        .find(|s| s.starts_with("carbonfusion-session="))
         .and_then(|s| {
-            let value = s.strip_prefix("aionui-session=")?.split(';').next()?.to_owned();
+            let value = s.strip_prefix("carbonfusion-session=")?.split(';').next()?.to_owned();
             if value.is_empty() { None } else { Some(value) }
         })
 }
@@ -74,7 +74,7 @@ fn get_with_cookie(uri: &str, token: &str) -> Request<Body> {
     Request::builder()
         .method("GET")
         .uri(uri)
-        .header("cookie", format!("aionui-session={token}"))
+        .header("cookie", format!("carbonfusion-session={token}"))
         .body(Body::empty())
         .unwrap()
 }
@@ -95,7 +95,7 @@ fn post_json_with_csrf(uri: &str, body: &str, token: &str, csrf: &str) -> Reques
         .header("content-type", "application/json")
         .header("authorization", format!("Bearer {token}"))
         .header("x-csrf-token", csrf)
-        .header("cookie", format!("aionui-csrf-token={csrf}"))
+        .header("cookie", format!("carbonfusion-csrf-token={csrf}"))
         .body(Body::from(body.to_owned()))
         .unwrap()
 }
@@ -238,7 +238,7 @@ async fn t12_3_session_cookie_attributes() {
         .get_all(header::SET_COOKIE)
         .iter()
         .filter_map(|v| v.to_str().ok())
-        .find(|s| s.starts_with("aionui-session="))
+        .find(|s| s.starts_with("carbonfusion-session="))
         .expect("session cookie should be set");
 
     assert!(set_cookie.contains("HttpOnly"));
@@ -263,7 +263,7 @@ async fn t13_1_authorization_header_takes_priority() {
         .method("GET")
         .uri("/api/auth/user")
         .header("authorization", format!("Bearer {token}"))
-        .header("cookie", "aionui-session=invalid_token")
+        .header("cookie", "carbonfusion-session=invalid_token")
         .body(Body::empty())
         .unwrap();
     let resp = app.oneshot(req).await.unwrap();

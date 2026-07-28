@@ -24,20 +24,20 @@ pub fn init(data_dir: impl AsRef<Path>) {
         tracing::warn!(
             attempted = %path.display(),
             existing = %existing.display(),
-            "aionui_runtime::init called twice with different paths; keeping first"
+            "carbonfusion_runtime::init called twice with different paths; keeping first"
         );
     }
 }
 
-/// Returns the root cache directory used for all aionui runtime artifacts.
+/// Returns the root cache directory used for all carbonfusion runtime artifacts.
 ///
 /// Priority:
 /// 1. Path supplied via [`init`] (`{data_dir}/runtime`) when the backend
 ///    started with `--data-dir`.
 /// 2. Platform cache dir (via `dirs::cache_dir()`):
-///    - macOS:   `~/Library/Caches/aionui/runtime`
-///    - Linux:   `$XDG_CACHE_HOME/aionui/runtime` (fallback `~/.cache/aionui/runtime`)
-///    - Windows: `%LOCALAPPDATA%\aionui\runtime`
+    /// - macOS:   `~/Library/Caches/carbonfusion/runtime`
+    /// - Linux:   `$XDG_CACHE_HOME/carbonfusion/runtime` (fallback `~/.cache/carbonfusion/runtime`)
+    /// - Windows: `%LOCALAPPDATA%\carbonfusion\runtime`
 ///
 /// Returns `None` only when neither [`init`] has run nor a platform cache
 /// dir is determinable (exotic envs).
@@ -45,7 +45,7 @@ pub fn runtime_root() -> Option<PathBuf> {
     if let Some(p) = RUNTIME_ROOT_OVERRIDE.get() {
         return Some(p.clone());
     }
-    dirs::cache_dir().map(|d| d.join("aionui").join("runtime"))
+    dirs::cache_dir().map(|d| d.join("carbonfusion").join("runtime"))
 }
 
 pub fn node_runtime_root() -> Option<PathBuf> {
@@ -69,7 +69,7 @@ mod tests {
             .take(2)
             .map(|c| c.as_os_str().to_string_lossy().into_owned())
             .collect();
-        assert_eq!(tail, vec!["runtime".to_string(), "aionui".to_string()]);
+        assert_eq!(tail, vec!["runtime".to_string(), "carbonfusion".to_string()]);
     }
 
     #[test]
@@ -83,7 +83,7 @@ mod tests {
             .collect();
         assert_eq!(
             tail,
-            vec!["node".to_string(), "runtime".to_string(), "aionui".to_string()]
+            vec!["node".to_string(), "runtime".to_string(), "carbonfusion".to_string()]
         );
     }
 
@@ -102,7 +102,7 @@ mod tests {
                 "acp".to_string(),
                 "managed-tools".to_string(),
                 "runtime".to_string(),
-                "aionui".to_string()
+                "carbonfusion".to_string()
             ]
         );
     }

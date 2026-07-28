@@ -549,6 +549,9 @@ fn conversation_label(agent_type: &AgentType, backend: Option<&serde_json::Value
     {
         return s.clone();
     }
+    if *agent_type == AgentType::Aionrs {
+        return "carbonfusion".to_owned();
+    }
     agent_type.serde_name().to_owned()
 }
 
@@ -567,7 +570,7 @@ fn map_runtime_workspace_validation_error(error: WorkspacePathValidationError) -
 
 fn log_workspace_path_check(conversation_id: &str, error: &WorkspacePathValidationError) {
     warn!(
-        target: "aionui_feedback_diagnostics",
+        target: "carbonfusion_feedback_diagnostics",
         diagnostic_event = "feedback.runtime.workspace_path_check",
         conversation_id = %conversation_id,
         path_present = !matches!(error, WorkspacePathValidationError::Empty),
@@ -1038,7 +1041,7 @@ mod tests {
         let context = repos.builder().build(&row).await.unwrap();
         assert!(!context.workspace.is_custom);
         assert!(context.workspace.stored_path.is_empty());
-        assert!(context.workspace.path.ends_with("aionrs-temp-conv-1"));
+        assert!(context.workspace.path.ends_with("carbonfusion-temp-conv-1"));
     }
 
     #[tokio::test]
@@ -1074,7 +1077,7 @@ mod tests {
             });
         });
 
-        assert!(captured.contains("aionui_feedback_diagnostics"), "{captured}");
+        assert!(captured.contains("carbonfusion_feedback_diagnostics"), "{captured}");
         assert!(captured.contains("feedback.runtime.workspace_path_check"), "{captured}");
         assert!(captured.contains("conversation_id=conv-1"), "{captured}");
         assert!(captured.contains("path_present=true"), "{captured}");

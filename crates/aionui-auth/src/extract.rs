@@ -34,7 +34,7 @@ pub fn extract_client_ip_from_headers(headers: &HeaderMap) -> String {
 
 /// Extract bearer token from HTTP request headers.
 ///
-/// Priority: `Authorization: Bearer <token>` > `aionui-session` cookie.
+/// Priority: `Authorization: Bearer <token>` > `carbonfusion-session` cookie.
 pub fn extract_token_from_headers(headers: &HeaderMap) -> Option<String> {
     if let Some(token) = extract_bearer_token(headers) {
         return Some(token);
@@ -140,7 +140,7 @@ mod tests {
 
     #[test]
     fn token_from_cookie() {
-        let headers = headers_with(&[("cookie", "aionui-session=cookie_token; other=val")]);
+        let headers = headers_with(&[("cookie", "carbonfusion-session=cookie_token; other=val")]);
         assert_eq!(extract_token_from_headers(&headers), Some("cookie_token".into()));
     }
 
@@ -148,7 +148,7 @@ mod tests {
     fn token_header_takes_priority_over_cookie() {
         let headers = headers_with(&[
             ("authorization", "Bearer header_token"),
-            ("cookie", "aionui-session=cookie_token"),
+            ("cookie", "carbonfusion-session=cookie_token"),
         ]);
         assert_eq!(extract_token_from_headers(&headers), Some("header_token".into()));
     }
@@ -181,7 +181,7 @@ mod tests {
 
     #[test]
     fn ws_token_from_cookie() {
-        let headers = headers_with(&[("cookie", "aionui-session=ws_cookie")]);
+        let headers = headers_with(&[("cookie", "carbonfusion-session=ws_cookie")]);
         assert_eq!(extract_token_from_ws_headers(&headers), Some("ws_cookie".into()));
     }
 
@@ -195,7 +195,7 @@ mod tests {
     fn ws_token_priority_order() {
         let headers = headers_with(&[
             ("authorization", "Bearer auth_token"),
-            ("cookie", "aionui-session=cookie_token"),
+            ("cookie", "carbonfusion-session=cookie_token"),
             ("sec-websocket-protocol", "proto_token"),
         ]);
         assert_eq!(extract_token_from_ws_headers(&headers), Some("auth_token".into()));
@@ -205,7 +205,7 @@ mod tests {
     fn ws_token_fallback_through_sources() {
         // Only cookie and protocol, no authorization
         let headers = headers_with(&[
-            ("cookie", "aionui-session=cookie_token"),
+            ("cookie", "carbonfusion-session=cookie_token"),
             ("sec-websocket-protocol", "proto_token"),
         ]);
         assert_eq!(extract_token_from_ws_headers(&headers), Some("cookie_token".into()));
@@ -247,15 +247,15 @@ mod tests {
     #[test]
     fn cookie_value_malformed_before_target() {
         // Malformed entry appears before the target cookie
-        let headers = headers_with(&[("cookie", "bad_entry; aionui-session=tok123")]);
-        assert_eq!(extract_cookie_value(&headers, "aionui-session"), Some("tok123".into()));
+        let headers = headers_with(&[("cookie", "bad_entry; carbonfusion-session=tok123")]);
+        assert_eq!(extract_cookie_value(&headers, "carbonfusion-session"), Some("tok123".into()));
     }
 
     #[test]
     fn token_from_cookie_with_malformed_entries() {
         // End-to-end: extract_token_from_headers should still find the
         // session cookie even when other entries lack '='
-        let headers = headers_with(&[("cookie", "garbage; aionui-session=abc; nope")]);
+        let headers = headers_with(&[("cookie", "garbage; carbonfusion-session=abc; nope")]);
         assert_eq!(extract_token_from_headers(&headers), Some("abc".into()));
     }
 }

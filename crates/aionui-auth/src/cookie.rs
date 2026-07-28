@@ -80,7 +80,7 @@ mod tests {
     #[test]
     fn session_cookie_http() {
         let cookie = http_config().build_session_cookie("my_token");
-        assert!(cookie.contains("aionui-session=my_token"));
+        assert!(cookie.contains("carbonfusion-session=my_token"));
         assert!(cookie.contains("HttpOnly"));
         assert!(cookie.contains("SameSite=Lax"));
         assert!(cookie.contains("Path=/"));
@@ -98,7 +98,7 @@ mod tests {
     #[test]
     fn clear_session_cookie_sets_max_age_zero() {
         let cookie = http_config().clear_session_cookie();
-        assert!(cookie.contains("aionui-session="));
+        assert!(cookie.contains("carbonfusion-session="));
         assert!(cookie.contains("Max-Age=0"));
         assert!(cookie.contains("HttpOnly"));
     }
@@ -106,7 +106,7 @@ mod tests {
     #[test]
     fn csrf_cookie_not_http_only() {
         let cookie = http_config().build_csrf_cookie("csrf_abc");
-        assert!(cookie.contains("aionui-csrf-token=csrf_abc"));
+        assert!(cookie.contains("carbonfusion-csrf-token=csrf_abc"));
         assert!(!cookie.contains("HttpOnly"));
         assert!(cookie.contains("SameSite=Lax"));
         assert!(cookie.contains("Max-Age="));

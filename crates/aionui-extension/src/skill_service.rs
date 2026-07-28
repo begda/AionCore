@@ -25,7 +25,7 @@ static BUILTIN_SKILLS: Dir<'static> = include_dir!("$CARGO_MANIFEST_DIR/../aionu
 /// Name of the environment variable that, when set, overrides the embedded
 /// corpus with an on-disk directory. Consumed by
 /// [`resolve_skill_paths`] when building [`SkillPaths`].
-pub const BUILTIN_SKILLS_ENV_VAR: &str = "AIONUI_BUILTIN_SKILLS_PATH";
+pub const BUILTIN_SKILLS_ENV_VAR: &str = "CARBONFUSION_BUILTIN_SKILLS_PATH";
 const MAX_SKILL_IMPORT_FILE_BYTES: u64 = 50 * 1024 * 1024;
 const MAX_SKILL_IMPORT_TOTAL_BYTES: u64 = 200 * 1024 * 1024;
 const IMPORT_STAGING_PREFIX: &str = ".import-staging-";
@@ -106,11 +106,11 @@ fn collect_corpus_files(dir: &Dir<'static>, root: &Path, files: &mut Vec<(String
 /// In dev/test it can be redirected via [`BUILTIN_SKILLS_ENV_VAR`].
 #[derive(Debug, Clone)]
 pub struct SkillPaths {
-    /// Root data directory (~/.aionui/).
+    /// Root data directory (~/.carbonfusion/).
     pub data_dir: PathBuf,
-    /// User-created skills directory (~/.aionui/skills/).
+    /// User-created skills directory (~/.carbonfusion/skills/).
     pub user_skills_dir: PathBuf,
-    /// Per-job cron skills directory (~/.aionui/cron/skills/).
+    /// Per-job cron skills directory (~/.carbonfusion/cron/skills/).
     pub cron_skills_dir: PathBuf,
     /// Built-in skills directory on disk. Always set.
     /// Points to `{data_dir}/builtin-skills/` in production (populated at
@@ -119,9 +119,9 @@ pub struct SkillPaths {
     pub builtin_skills_dir: PathBuf,
     /// Built-in rules directory (app bundle resource).
     pub builtin_rules_dir: PathBuf,
-    /// Assistant-level rules directory (~/.aionui/assistant-rules/).
+    /// Assistant-level rules directory (~/.carbonfusion/assistant-rules/).
     pub assistant_rules_dir: PathBuf,
-    /// Assistant-level skills directory (~/.aionui/assistant-skills/).
+    /// Assistant-level skills directory (~/.carbonfusion/assistant-skills/).
     pub assistant_skills_dir: PathBuf,
 }
 
@@ -133,7 +133,7 @@ pub struct SkillPaths {
 /// under `data_dir` (materialized at startup from the embedded corpus)
 /// unless redirected via [`BUILTIN_SKILLS_ENV_VAR`].
 ///
-/// `data_dir` is the user-level data root (e.g. `~/.aionui/`) and
+/// `data_dir` is the user-level data root (e.g. `~/.carbonfusion/`) and
 /// determines where user skills, assistant resources, and the built-in
 /// skills tree (`{data_dir}/builtin-skills/`) live. Per-conversation
 /// agent skills are no longer materialized on disk — see

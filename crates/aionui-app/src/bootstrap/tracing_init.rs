@@ -124,7 +124,7 @@ pub fn init_tracing(log_dir: &Path, log_level: Option<&str>) -> Result<LogGuards
         .with_field("filter", aionrs_level.clone())
         .with_field("logDir", active_log_dir.display().to_string())
     })?;
-    let aionrs_appender = DailyDatedLogWriter::new(log_dir.to_path_buf(), "aionrs.log");
+    let aionrs_appender = DailyDatedLogWriter::new(log_dir.to_path_buf(), "carbonfusion.log");
     let (aionrs_non_blocking, aionrs_guard) = tracing_appender::non_blocking(aionrs_appender);
     let aionrs_layer = fmt::layer()
         .json()

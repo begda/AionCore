@@ -15,7 +15,7 @@ content, use the user's language.
 
 ## Rules
 
-1. Use only `"$AIONUI_HELPER_BIN" diagnose ...`.
+1. Use only `"$CARBONFUSION_HELPER_BIN" diagnose ...`.
 2. Start with `diagnose overview` for broad "what is wrong" requests.
 3. Use named diagnose commands first. Use `diagnose http get` only when no named
    command covers the diagnostic need.
@@ -32,7 +32,7 @@ content, use the user's language.
 When unsure which command or stdin fields are available, ask the CLI:
 
 ```bash
-"$AIONUI_HELPER_BIN" diagnose capabilities
+"$CARBONFUSION_HELPER_BIN" diagnose capabilities
 ```
 
 The output is the agent-readable contract: domains, command names, stdin JSON
@@ -58,7 +58,7 @@ runtime context.
 For a vague "AionUi is broken" report, run:
 
 ```bash
-"$AIONUI_HELPER_BIN" diagnose overview
+"$CARBONFUSION_HELPER_BIN" diagnose overview
 ```
 
 Use the overview to decide where to drill in:
@@ -75,7 +75,7 @@ Use the overview to decide where to drill in:
 Inspect the current conversation:
 
 ```bash
-"$AIONUI_HELPER_BIN" diagnose conversations get <<'JSON'
+"$CARBONFUSION_HELPER_BIN" diagnose conversations get <<'JSON'
 {
   "conversation_id": "current"
 }
@@ -85,7 +85,7 @@ JSON
 Inspect a known conversation:
 
 ```bash
-"$AIONUI_HELPER_BIN" diagnose conversations get <<'JSON'
+"$CARBONFUSION_HELPER_BIN" diagnose conversations get <<'JSON'
 {
   "conversation_id": "conv_123"
 }
@@ -95,7 +95,7 @@ JSON
 Read recent messages:
 
 ```bash
-"$AIONUI_HELPER_BIN" diagnose conversations messages <<'JSON'
+"$CARBONFUSION_HELPER_BIN" diagnose conversations messages <<'JSON'
 {
   "conversation_id": "current",
   "limit": 30,
@@ -114,7 +114,7 @@ Interpretation:
 ### Provider Or Model Failure
 
 ```bash
-"$AIONUI_HELPER_BIN" diagnose providers summary
+"$CARBONFUSION_HELPER_BIN" diagnose providers summary
 ```
 
 Look for non-`healthy` model health, stale `last_check`, high latency, or an
@@ -124,7 +124,7 @@ the named command is insufficient.
 ### Scheduled Task Did Not Run
 
 ```bash
-"$AIONUI_HELPER_BIN" diagnose cron summary
+"$CARBONFUSION_HELPER_BIN" diagnose cron summary
 ```
 
 Check `enabled`, `last_status`, `last_error`, `next_run_at`, `last_run_at`,
@@ -133,7 +133,7 @@ Check `enabled`, `last_status`, `last_error`, `next_run_at`, `last_run_at`,
 ### MCP Server Has No Tools
 
 ```bash
-"$AIONUI_HELPER_BIN" diagnose mcp summary
+"$CARBONFUSION_HELPER_BIN" diagnose mcp summary
 ```
 
 An enabled server with `tool_count=0` usually means startup failed, the command
@@ -143,13 +143,13 @@ registration.
 ### Team Member Hung
 
 ```bash
-"$AIONUI_HELPER_BIN" diagnose teams summary
+"$CARBONFUSION_HELPER_BIN" diagnose teams summary
 ```
 
 Find the member's `conversation_id`, then drill into that conversation:
 
 ```bash
-"$AIONUI_HELPER_BIN" diagnose conversations get <<'JSON'
+"$CARBONFUSION_HELPER_BIN" diagnose conversations get <<'JSON'
 {
   "conversation_id": "member_conv_123"
 }
@@ -159,7 +159,7 @@ JSON
 ### Backend Health
 
 ```bash
-"$AIONUI_HELPER_BIN" diagnose health
+"$CARBONFUSION_HELPER_BIN" diagnose health
 ```
 
 Use this to confirm the backend is reachable and read the core version/build
@@ -170,7 +170,7 @@ metadata.
 Tail logs when the runtime provides `AIONUI_LOG_DIR`:
 
 ```bash
-"$AIONUI_HELPER_BIN" diagnose logs tail <<'JSON'
+"$CARBONFUSION_HELPER_BIN" diagnose logs tail <<'JSON'
 {
   "lines": 100,
   "errors_only": true,
@@ -183,7 +183,7 @@ If `AIONUI_LOG_DIR` is unavailable and the user gives a log directory, pass it
 explicitly:
 
 ```bash
-"$AIONUI_HELPER_BIN" diagnose logs tail <<'JSON'
+"$CARBONFUSION_HELPER_BIN" diagnose logs tail <<'JSON'
 {
   "log_dir": "/Users/alex/Library/Logs/AionUi",
   "lines": 100,
@@ -201,7 +201,7 @@ appear around tool calls and are not automatically the root cause.
 Use this only when a named command does not cover the diagnostic read.
 
 ```bash
-"$AIONUI_HELPER_BIN" diagnose http get <<'JSON'
+"$CARBONFUSION_HELPER_BIN" diagnose http get <<'JSON'
 {
   "path": "/api/teams",
   "reason": "Inspect team fields not covered by diagnose teams summary."

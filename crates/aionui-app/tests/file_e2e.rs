@@ -1054,7 +1054,7 @@ fn upload_request(content_type: &str, body: Vec<u8>, token: &str, csrf: &str) ->
         .header("content-length", content_length)
         .header("authorization", format!("Bearer {token}"))
         .header("x-csrf-token", csrf)
-        .header("cookie", format!("aionui-csrf-token={csrf}"))
+        .header("cookie", format!("carbonfusion-csrf-token={csrf}"))
         .body(axum::body::Body::from(body))
         .unwrap()
 }

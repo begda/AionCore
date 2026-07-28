@@ -154,7 +154,7 @@ async fn t4_1_login_success() {
 
     // Check Set-Cookie header
     let set_cookie = resp.headers().get(header::SET_COOKIE).unwrap().to_str().unwrap();
-    assert!(set_cookie.contains("aionui-session="));
+    assert!(set_cookie.contains("carbonfusion-session="));
     assert!(set_cookie.contains("HttpOnly"));
 
     let json = body_json(resp).await;
@@ -641,7 +641,7 @@ async fn t11_1_qr_login_success() {
 
     // Check Set-Cookie
     let set_cookie = resp.headers().get(header::SET_COOKIE).unwrap().to_str().unwrap();
-    assert!(set_cookie.contains("aionui-session="));
+    assert!(set_cookie.contains("carbonfusion-session="));
 
     let json = body_json(resp).await;
     assert_eq!(json["success"], true);

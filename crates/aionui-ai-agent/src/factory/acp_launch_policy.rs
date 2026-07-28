@@ -166,7 +166,7 @@ mod tests {
                 metadata: &metadata,
                 config: &config,
                 session_snapshot: None,
-                runtime_env: &[("AIONUI_CONVERSATION_ID".into(), "conv-1".into())],
+                runtime_env: &[("CARBONFUSION_CONVERSATION_ID".into(), "conv-1".into())],
             },
         );
 
@@ -188,7 +188,7 @@ mod tests {
             command_spec
                 .env
                 .iter()
-                .any(|entry| entry.name == "AIONUI_CONVERSATION_ID" && entry.value == "conv-1")
+                .any(|entry| entry.name == "CARBONFUSION_CONVERSATION_ID" && entry.value == "conv-1")
         );
     }
 

@@ -440,8 +440,8 @@ impl IAgentTask for AionrsAgentManager {
                     "Aionrs engine.run() failed, emitting Error"
                 );
                 error!(
-                    target: "aionui_feedback_diagnostics",
-                    diagnostic_event = "feedback.runtime.aionrs_error",
+                    target: "carbonfusion_feedback_diagnostics",
+                    diagnostic_event = "feedback.runtime.carbonfusion_error",
                     conversation_id = %self.runtime.conversation_id(),
                     msg_id = %data.msg_id,
                     turn_id = data.turn_id.as_deref().unwrap_or("none"),
@@ -451,7 +451,7 @@ impl IAgentTask for AionrsAgentManager {
                     http_status = summary.http_status,
                     failure_count = summary.failure_count,
                     failure_limit = summary.failure_limit,
-                    "feedback.runtime.aionrs_error"
+                    "feedback.runtime.carbonfusion_error"
                 );
                 let send_error = aionrs_engine_error_to_send_error(&e);
                 self.runtime.emit_error_data(send_error.stream_error().clone());

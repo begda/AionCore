@@ -3555,6 +3555,9 @@ fn conversation_label(agent_type: &AgentType, backend: Option<&serde_json::Value
     {
         return s.clone();
     }
+    if *agent_type == AgentType::Aionrs {
+        return "carbonfusion".to_owned();
+    }
     agent_type.serde_name().to_owned()
 }
 

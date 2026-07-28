@@ -10,7 +10,7 @@ use crate::skill_service::NamedPath;
 
 /// Persistent storage for custom external skill paths.
 ///
-/// Data is stored in `~/.aionui/custom-skill-paths.json`.
+/// Data is stored in `~/.carbonfusion/custom-skill-paths.json`.
 pub struct ExternalPathsManager {
     file_path: PathBuf,
     paths: RwLock<Vec<PersistedNamedPath>>,

@@ -19,42 +19,42 @@ fn map_arch() -> &'static str {
     }
 }
 
-/// Resolve the cache directory for AionUI.
+/// Resolve the cache directory for CarbonFusion.
 ///
-/// Priority: `AIONUI_CACHE_DIR` env → `dirs::cache_dir()/aionui`.
+/// Priority: `CARBONFUSION_CACHE_DIR` env → `dirs::cache_dir()/carbonfusion`.
 fn resolve_cache_dir() -> String {
-    if let Ok(v) = std::env::var("AIONUI_CACHE_DIR")
+    if let Ok(v) = std::env::var("CARBONFUSION_CACHE_DIR")
         && !v.is_empty()
     {
         return v;
     }
     dirs::cache_dir()
-        .map(|p| p.join("aionui").to_string_lossy().into_owned())
+        .map(|p| p.join("carbonfusion").to_string_lossy().into_owned())
         .unwrap_or_default()
 }
 
-/// Resolve the work (data) directory for AionUI.
+/// Resolve the work (data) directory for CarbonFusion.
 ///
-/// Priority: `AIONUI_WORK_DIR` env → `dirs::data_dir()/aionui`.
+/// Priority: `CARBONFUSION_WORK_DIR` env → `dirs::data_dir()/carbonfusion`.
 fn resolve_work_dir() -> String {
-    if let Ok(v) = std::env::var("AIONUI_WORK_DIR")
+    if let Ok(v) = std::env::var("CARBONFUSION_WORK_DIR")
         && !v.is_empty()
     {
         return v;
     }
     dirs::data_dir()
-        .map(|p| p.join("aionui").to_string_lossy().into_owned())
+        .map(|p| p.join("carbonfusion").to_string_lossy().into_owned())
         .unwrap_or_default()
 }
 
-/// Resolve the log directory for AionUI.
+/// Resolve the log directory for CarbonFusion.
 ///
-/// Priority: `AIONUI_LOG_DIR` env →
-///   macOS: `~/Library/Logs/aionui`
-///   Linux: `dirs::state_dir()/aionui/logs` (XDG_STATE_HOME)
-///   Windows: `dirs::data_dir()/aionui/logs`
+/// Priority: `CARBONFUSION_LOG_DIR` env →
+///   macOS: `~/Library/Logs/carbonfusion`
+///   Linux: `dirs::state_dir()/carbonfusion/logs` (XDG_STATE_HOME)
+///   Windows: `dirs::data_dir()/carbonfusion/logs`
 fn resolve_log_dir() -> String {
-    if let Ok(v) = std::env::var("AIONUI_LOG_DIR")
+    if let Ok(v) = std::env::var("CARBONFUSION_LOG_DIR")
         && !v.is_empty()
     {
         return v;
@@ -63,15 +63,15 @@ fn resolve_log_dir() -> String {
     if cfg!(target_os = "macos")
         && let Some(home) = dirs::home_dir()
     {
-        return home.join("Library/Logs/aionui").to_string_lossy().into_owned();
+        return home.join("Library/Logs/carbonfusion").to_string_lossy().into_owned();
     }
     // Linux: XDG state dir
     if let Some(state) = dirs::state_dir() {
-        return state.join("aionui/logs").to_string_lossy().into_owned();
+        return state.join("carbonfusion/logs").to_string_lossy().into_owned();
     }
-    // Fallback: data_dir/aionui/logs
+    // Fallback: data_dir/carbonfusion/logs
     dirs::data_dir()
-        .map(|p| p.join("aionui/logs").to_string_lossy().into_owned())
+        .map(|p| p.join("carbonfusion/logs").to_string_lossy().into_owned())
         .unwrap_or_default()
 }
 
@@ -117,20 +117,20 @@ mod tests {
     fn test_env_override_cache_dir() {
         // This test verifies the resolve logic reads env vars.
         // We cannot reliably set env in parallel tests, so just verify
-        // the default path contains "aionui".
+        // the default path contains "carbonfusion".
         let dir = resolve_cache_dir();
-        assert!(dir.contains("aionui"), "cache_dir should contain 'aionui': {dir}");
+        assert!(dir.contains("carbonfusion"), "cache_dir should contain 'carbonfusion': {dir}");
     }
 
     #[test]
     fn test_env_override_work_dir() {
         let dir = resolve_work_dir();
-        assert!(dir.contains("aionui"), "work_dir should contain 'aionui': {dir}");
+        assert!(dir.contains("carbonfusion"), "work_dir should contain 'carbonfusion': {dir}");
     }
 
     #[test]
     fn test_env_override_log_dir() {
         let dir = resolve_log_dir();
-        assert!(dir.contains("aionui"), "log_dir should contain 'aionui': {dir}");
+        assert!(dir.contains("carbonfusion"), "log_dir should contain 'carbonfusion': {dir}");
     }
 }

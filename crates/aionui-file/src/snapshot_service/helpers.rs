@@ -19,7 +19,7 @@ use crate::types::{CompareResult, FileChangeInfo, SnapshotInfo, SnapshotMode};
 // ---------------------------------------------------------------------------
 
 /// Prefix for temporary snapshot directories under the system temp dir.
-pub(super) const SNAPSHOT_DIR_PREFIX: &str = "aionui-snapshot-";
+pub(super) const SNAPSHOT_DIR_PREFIX: &str = "carbonfusion-snapshot-";
 
 /// Exclude rules written to `<git-dir>/info/exclude` for snapshot mode.
 /// These patterns prevent large/generated directories from being tracked.
@@ -41,9 +41,9 @@ Thumbs.db
 ";
 
 /// Signature name used for snapshot commits.
-const SNAPSHOT_SIG_NAME: &str = "aionui";
+const SNAPSHOT_SIG_NAME: &str = "carbonfusion";
 /// Signature email used for snapshot commits.
-const SNAPSHOT_SIG_EMAIL: &str = "snapshot@aionui.local";
+const SNAPSHOT_SIG_EMAIL: &str = "snapshot@carbonfusion.local";
 /// Commit message for the initial snapshot baseline.
 const SNAPSHOT_INITIAL_MSG: &str = "Initial snapshot";
 
@@ -57,7 +57,7 @@ pub(super) struct WorkspaceState {
     pub mode: SnapshotMode,
     /// Path to the git directory.
     /// - git-repo mode: the workspace path itself (contains `.git/`).
-    /// - snapshot mode: `/tmp/aionui-snapshot-{hash}` (bare-style git dir).
+    /// - snapshot mode: `/tmp/carbonfusion-snapshot-{hash}` (bare-style git dir).
     pub repo_path: PathBuf,
     /// Canonical path to the actual workspace directory.
     pub workspace_path: PathBuf,

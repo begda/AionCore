@@ -181,7 +181,7 @@ pub async fn init_database_memory() -> Result<Database, DbError> {
     Ok(Database { pool })
 }
 
-/// Copy the legacy `aionui.db` to the new target path if the target does not exist.
+/// Copy the legacy `carbonfusion.db` to the new target path if the target does not exist.
 ///
 /// This enables safe upgrades: the old database remains untouched and the backend
 /// operates exclusively on the copy. The copy is atomic (write to `.tmp`, then rename)
@@ -191,7 +191,7 @@ pub fn maybe_copy_legacy_database(target: &Path) -> Result<(), DbError> {
         return Ok(());
     }
 
-    let legacy = target.with_file_name("aionui.db");
+    let legacy = target.with_file_name("carbonfusion.db");
     if !legacy.exists() {
         return Ok(());
     }
@@ -288,7 +288,7 @@ fn migrate_lock_path(db_path: &Path) -> PathBuf {
     let mut p = db_path.to_path_buf();
     let new_name = match p.file_name().and_then(|s| s.to_str()) {
         Some(name) => format!("{name}.migrate.lock"),
-        None => "aionui.migrate.lock".to_string(),
+        None => "carbonfusion.migrate.lock".to_string(),
     };
     p.set_file_name(new_name);
     p
@@ -799,10 +799,10 @@ mod tests {
 
     #[test]
     fn migrate_lock_path_sits_next_to_db() {
-        let db = Path::new("/var/lib/aionui/aionui-backend.db");
+        let db = Path::new("/var/lib/carbonfusion/carbonfusion-backend.db");
         let lock = migrate_lock_path(db);
         assert_eq!(lock.parent(), db.parent());
-        assert_eq!(lock.file_name().unwrap(), "aionui-backend.db.migrate.lock");
+        assert_eq!(lock.file_name().unwrap(), "carbonfusion-backend.db.migrate.lock");
     }
 
     #[test]

@@ -33,7 +33,7 @@ impl AgentType {
             AgentType::OpenclawGateway => "OpenClaw Gateway",
             AgentType::Nanobot => "Nanobot",
             AgentType::Remote => "Remote",
-            AgentType::Aionrs => "Aion CLI",
+            AgentType::Aionrs => "CarbonFusion CLI",
             AgentType::Gemini => "Gemini (legacy)",
             AgentType::Codex => "Codex (legacy)",
         }
@@ -83,7 +83,7 @@ impl AgentType {
     /// Codex conversations use ACP metadata with `backend = "codex"`.
     pub fn native_skills_dirs(&self) -> Option<&'static [&'static str]> {
         match self {
-            AgentType::Aionrs => Some(&[".aionrs/skills"]),
+            AgentType::Aionrs => Some(&[".carbonfusion/skills"]),
             AgentType::Acp
             | AgentType::OpenclawGateway
             | AgentType::Nanobot
@@ -310,7 +310,7 @@ mod tests {
     #[test]
     fn test_agent_type_display_names() {
         assert_eq!(AgentType::OpenclawGateway.display_name(), "OpenClaw Gateway");
-        assert_eq!(AgentType::Aionrs.display_name(), "Aion CLI");
+        assert_eq!(AgentType::Aionrs.display_name(), "CarbonFusion CLI");
         assert_eq!(AgentType::Nanobot.display_name(), "Nanobot");
         assert_eq!(AgentType::Remote.display_name(), "Remote");
         assert_eq!(AgentType::Acp.display_name(), "ACP");

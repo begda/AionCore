@@ -128,7 +128,7 @@ pub(super) async fn build(
         None
     };
 
-    let session_directory = deps.data_dir.join("aionrs-sessions");
+    let session_directory = deps.data_dir.join("carbonfusion-sessions");
 
     let resume_session = {
         let session_mgr = SessionManager::new(session_directory.clone(), 100);
@@ -151,7 +151,7 @@ pub(super) async fn build(
             }
             Err(_) => {
                 // Fallback: old architecture stored sessions inside the workspace
-                let legacy_dir = std::path::Path::new(&ctx.workspace).join(".aionrs/sessions");
+                let legacy_dir = std::path::Path::new(&ctx.workspace).join(".carbonfusion/sessions");
                 let legacy_mgr = SessionManager::new(legacy_dir.clone(), 100);
                 match legacy_mgr.load(&ctx.conversation_id) {
                     Ok(mut session) => {

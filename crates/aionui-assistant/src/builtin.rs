@@ -111,13 +111,13 @@ impl BuiltinAssistantRegistry {
     /// directory, read from disk (test-only override). Otherwise use the
     /// assets embedded at compile time.
     pub fn load() -> Self {
-        if let Ok(env) = std::env::var("AIONUI_BUILTIN_ASSISTANTS_PATH") {
+        if let Ok(env) = std::env::var("CARBONFUSION_BUILTIN_ASSISTANTS_PATH") {
             let p = PathBuf::from(env);
             if p.exists() {
                 return Self::load_from_dir(p);
             }
             warn!(
-                "AIONUI_BUILTIN_ASSISTANTS_PATH points to missing directory; \
+                "CARBONFUSION_BUILTIN_ASSISTANTS_PATH points to missing directory; \
                  falling back to embedded assets"
             );
         }
@@ -430,7 +430,7 @@ mod tests {
         // SAFETY: cargo test runs tests in parallel by default, so guard
         // against interference from other tests by using a unique env-var
         // value and checking via a dedicated loader call.
-        let key = "AIONUI_BUILTIN_ASSISTANTS_PATH";
+        let key = "CARBONFUSION_BUILTIN_ASSISTANTS_PATH";
         let prev = std::env::var(key).ok();
         // SAFETY: set_var is sound when no other thread is concurrently
         // reading env. Tests within this module do not share mutation, and

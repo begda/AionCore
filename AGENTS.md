@@ -216,3 +216,12 @@ cargo test -p aionui-<crate1> -p aionui-<crate2>                               #
 ```bash
 just push                                             # full pre-push gate, then push
 ```
+
+写代码前
+读取 项目开发记录 确保开发连续性
+先给出方案 ,用户确认了才开始也代码,不要一开始就自作主张写代码
+
+给方案前必须想清楚、想全面，考虑开发态和生产态的差异、打包部署的影响、前后一致性等，不要给不成熟、不靠谱的方案
+
+代码提交规则
+/Users/liaohui1080/Documents/liaohuiFile/new_code/monorepo/packages/sklls/git/SKLL.md

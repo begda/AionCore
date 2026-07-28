@@ -25,7 +25,7 @@ use crate::error::McpError;
 const CALLBACK_TIMEOUT: Duration = Duration::from_secs(120);
 
 /// Default OAuth client ID for MCP servers (public client, no secret).
-const DEFAULT_CLIENT_ID: &str = "aionui";
+const DEFAULT_CLIENT_ID: &str = "carbonfusion";
 
 /// Token expiry safety margin (refresh 5 minutes before expiration).
 const EXPIRY_MARGIN_MS: i64 = 5 * 60 * 1000;

@@ -118,7 +118,7 @@ pub struct AssistantService {
     builtin: Arc<BuiltinAssistantRegistry>,
     agent_catalog: Option<Arc<dyn AssistantAgentCatalogPort>>,
     /// Root directory holding user-authored rule/skill md files and avatars.
-    /// Defaults to `~/.aionui/` but can be overridden for tests.
+    /// Defaults to `~/.carbonfusion/` but can be overridden for tests.
     user_data_dir: PathBuf,
 }
 
@@ -144,9 +144,9 @@ impl AssistantService {
     /// keep their rule files alongside the matching db. Tests pin a temp
     /// directory.
     ///
-    /// There is no implicit `~/.aionui` fallback on purpose: an earlier
+    /// There is no implicit `~/.carbonfusion` fallback on purpose: an earlier
     /// version had one, and dev builds silently wrote rule files to the
-    /// release directory while the db lived under `~/.aionui-dev/`,
+    /// release directory while the db lived under `~/.carbonfusion-dev/`,
     /// resulting in `read_rule` returning empty in dev mode. Forcing the
     /// caller to pass a path makes the wiring explicit.
     pub fn new(pool: SqlitePool, deps: AssistantServiceDeps, user_data_dir: PathBuf) -> Self {

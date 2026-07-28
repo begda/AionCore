@@ -42,7 +42,7 @@ async fn fixture_embedded() -> Fixture {
     // construction time, and each test calls `fixture_embedded` once at
     // the top, so the mutation is race-free in practice.
     unsafe {
-        std::env::remove_var("AIONUI_BUILTIN_SKILLS_PATH");
+        std::env::remove_var("CARBONFUSION_BUILTIN_SKILLS_PATH");
     }
 
     let tmp = TempDir::new().unwrap();

@@ -88,8 +88,8 @@ pub trait IFileService: Send + Sync {
     /// Write `data` to a temporary file and return its absolute path.
     ///
     /// When `conversation_id` is provided, the file is placed under a
-    /// per-conversation sub-directory (`<tmp>/aionui/<conversation_id>/`);
-    /// otherwise the shared `<tmp>/aionui/` directory is used (same as
+    /// per-conversation sub-directory (`<tmp>/carbonfusion/<conversation_id>/`);
+    /// otherwise the shared `<tmp>/carbonfusion/` directory is used (same as
     /// [`create_temp_file`](Self::create_temp_file)).
     ///
     /// `file_name` must not contain path separators or traversal patterns.
@@ -169,7 +169,7 @@ pub trait IFileWatchService: Send + Sync {
 /// Supports two modes:
 /// - **git-repo**: directory already has `.git` — uses it directly.
 /// - **snapshot**: no `.git` — creates a temporary repo under
-///   `/tmp/aionui-snapshot-*`.
+    ///   `/tmp/carbonfusion-snapshot-*`.
 #[async_trait::async_trait]
 pub trait ISnapshotService: Send + Sync {
     /// Initialize the snapshot system for a workspace.

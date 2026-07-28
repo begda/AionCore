@@ -13,9 +13,9 @@ pub const WS_CLOSE_POLICY_VIOLATION: u16 = 1008;
 // --- Authentication ---
 
 pub const SESSION_EXPIRY: &str = "24h";
-pub const COOKIE_NAME: &str = "aionui-session";
+pub const COOKIE_NAME: &str = "carbonfusion-session";
 pub const COOKIE_MAX_AGE_DAYS: u32 = 30;
-pub const CSRF_COOKIE_NAME: &str = "aionui-csrf-token";
+pub const CSRF_COOKIE_NAME: &str = "carbonfusion-csrf-token";
 pub const CSRF_HEADER_NAME: &str = "x-csrf-token";
 
 // --- Server ---
