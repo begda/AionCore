@@ -4476,7 +4476,7 @@ mod tests {
 
     #[tokio::test]
     async fn bootstrap_falls_back_to_agent_type_when_backend_is_empty() {
-        // Engines like Aion CLI carry their identity in `agent_type` and leave
+        // Engines like CarbonFusion CLI carry their identity in `agent_type` and leave
         // `backend` empty (it is an ACP-vendor label). The generated assistant must
         // still expose the concrete agent id so the frontend does not bind it
         // through an overloaded runtime backend label.

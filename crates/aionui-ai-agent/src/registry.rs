@@ -730,7 +730,7 @@ fn decode_row(
         warn!(
             id = %meta.id,
             name = %meta.name,
-            "Ignoring command override for internal Aion CLI agent"
+            "Ignoring command override for internal CarbonFusion CLI agent"
         );
     }
     let env_override = parse_env_override(&env_override_raw);
@@ -738,7 +738,7 @@ fn decode_row(
         warn!(
             id = %meta.id,
             name = %meta.name,
-            "Ignoring environment overrides for internal Aion CLI agent"
+            "Ignoring environment overrides for internal CarbonFusion CLI agent"
         );
     }
 
@@ -1549,7 +1549,7 @@ mod tests {
 
     /// On a host that has *none* of the seeded CLIs installed, the
     /// public listing collapses to the rows that don't need one
-    /// (Aion CLI is `agent_source = internal` with no `command`).
+    /// (CarbonFusion CLI is `agent_source = internal` with no `command`).
     /// This guards the pill-bar contract: never show an unusable
     /// vendor.
     #[tokio::test]
@@ -1564,7 +1564,7 @@ mod tests {
                 .map(|m| (&m.id, m.enabled, m.available))
                 .collect::<Vec<_>>()
         );
-        // Aion CLI (internal, no spawn command) is always available.
+        // CarbonFusion CLI (internal, no spawn command) is always available.
         assert!(
             visible.iter().any(|m| m.agent_type == AgentType::Aionrs),
             "internal aionrs row should survive the filter"
@@ -1814,7 +1814,7 @@ mod tests {
         let row = AgentMetadataRow {
             id: "632f31d2".to_string(),
             icon: None,
-            name: "Aion CLI".to_string(),
+            name: "CarbonFusion CLI".to_string(),
             name_i18n: None,
             description: None,
             description_i18n: None,
