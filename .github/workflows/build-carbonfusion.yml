@@ -125,6 +125,6 @@ jobs:
             提交：${{ github.sha }}
             构建号：${{ github.run_number }}
           files: artifacts/*
-          prerelease: true
+          prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
