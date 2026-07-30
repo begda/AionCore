@@ -3,8 +3,7 @@ name: CarbonFusion Build & Release
 on:
   push:
     tags:
-      - "v*-fix"
-      - "v*-sync"
+      - "carbonfusion-v*"
   workflow_dispatch:
 
 permissions:
