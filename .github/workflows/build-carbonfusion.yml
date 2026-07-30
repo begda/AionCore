@@ -2,7 +2,9 @@ name: CarbonFusion Build & Release
 
 on:
   push:
-    branches: [carbonfusion]
+    tags:
+      - "v*-fix"
+      - "v*-sync"
   workflow_dispatch:
 
 permissions:
@@ -75,8 +77,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p dist
-          VERSION="${{ github.run_number }}"
-          ARCHIVE="aioncore-carbonfusion-v${VERSION}-${{ matrix.target }}.tar.gz"
+          ARCHIVE="aioncore-${{ github.ref_name }}-${{ matrix.target }}.tar.gz"
           tar -C target/${{ matrix.target }}/release -czf "dist/${ARCHIVE}" ${{ matrix.binary_name }}
           echo "ARCHIVE=${ARCHIVE}" >> "$GITHUB_ENV"
 
@@ -85,8 +86,7 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path dist | Out-Null
-          $VERSION = "${{ github.run_number }}"
-          $archive = "aioncore-carbonfusion-v${VERSION}-${{ matrix.target }}.zip"
+          $archive = "aioncore-${{ github.ref_name }}-${{ matrix.target }}.zip"
           Compress-Archive -Path "target/${{ matrix.target }}/release/${{ matrix.binary_name }}" -DestinationPath "dist/${archive}" -Force
           "ARCHIVE=${archive}" | Out-File -FilePath $env:GITHUB_ENV -Append
 
@@ -117,13 +117,10 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: carbonfusion-build-${{ github.run_number }}
-          name: "CarbonFusion Build #${{ github.run_number }} (${{ github.sha }})"
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
           body: |
-            自动构建于 carbonfusion 分支提交。
-
             提交：${{ github.sha }}
-            构建号：${{ github.run_number }}
           files: artifacts/*
           prerelease: true
         env:
